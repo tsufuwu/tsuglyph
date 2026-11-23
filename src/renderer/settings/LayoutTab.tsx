@@ -103,10 +103,25 @@ export const LayoutTab: React.FC = () => {
   if (!activeProfile) return null;
 
   const handleSelectLayout = (layoutId: ConsoleLayoutId) => {
-    updateActiveProfile({
-      layout: layoutId,
-      customMapping: getDefaultMappingForLayout(layoutId),
-    });
+    const currentPos = activeProfile.position;
+    const currentScale = activeProfile.scale;
+    // Check if an existing profile matches this console layout
+    const matchingProfile = config.profiles.find((p) => p.layout === layoutId);
+    if (matchingProfile) {
+      const updatedProfiles = config.profiles.map((p) =>
+        p.id === matchingProfile.id
+          ? { ...p, position: currentPos, scale: currentScale }
+          : p
+      );
+      saveConfig({ ...config, profiles: updatedProfiles, activeProfileId: matchingProfile.id });
+    } else {
+      updateActiveProfile({
+        layout: layoutId,
+        customMapping: getDefaultMappingForLayout(layoutId),
+        position: currentPos,
+        scale: currentScale,
+      });
+    }
   };
 
   return (

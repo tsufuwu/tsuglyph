@@ -124,19 +124,25 @@ export const OverlayApp: React.FC = () => {
   };
 
   useEffect(() => {
+    let latestPos = { x: activeProfile?.position?.x ?? 0, y: activeProfile?.position?.y ?? 0 };
+
     const handleMouseMove = (e: MouseEvent) => {
-      // 1. Handle Dragging Position
+      // 1. Handle Dragging Position (Direct instantaneous move without disk-write lag)
       if (isDragging) {
         const dx = e.screenX - dragStartRef.current.screenX;
         const dy = e.screenY - dragStartRef.current.screenY;
 
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
           hasMovedRef.current = true;
         }
 
         const newX = Math.round(dragStartRef.current.windowX + dx);
         const newY = Math.round(dragStartRef.current.windowY + dy);
-        setPosition({ x: newX, y: newY });
+        latestPos = { x: newX, y: newY };
+
+        if (window.electronAPI?.setOverlayPosition) {
+          window.electronAPI.setOverlayPosition(latestPos);
+        }
       }
 
       // 2. Handle Resizing Scale
@@ -166,11 +172,18 @@ export const OverlayApp: React.FC = () => {
       }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
       if (isDragging) {
         setIsDragging(false);
-        // If clicked without dragging, open Settings window
-        if (!hasMovedRef.current) {
+        if (hasMovedRef.current) {
+          // Finished dragging: persist final position to profile config once
+          const dx = e.screenX - dragStartRef.current.screenX;
+          const dy = e.screenY - dragStartRef.current.screenY;
+          const finalX = Math.round(dragStartRef.current.windowX + dx);
+          const finalY = Math.round(dragStartRef.current.windowY + dy);
+          setPosition({ x: finalX, y: finalY });
+        } else {
+          // If clicked without dragging on the layout, open Settings window
           if (window.electronAPI) {
             window.electronAPI.openSettings();
           }
@@ -203,7 +216,7 @@ export const OverlayApp: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, setPosition, updateActiveProfile]);
+  }, [isDragging, isResizing, setPosition, updateActiveProfile, activeProfile?.position]);
 
   if (!config.isVisible || !activeProfile) {
     return null;
@@ -218,16 +231,16 @@ export const OverlayApp: React.FC = () => {
     : null;
 
   return (
-    <div className="w-full h-full overflow-hidden select-none bg-transparent flex items-start justify-start p-3">
-      {/* Positioned Container */}
+    <div className="w-full h-full overflow-hidden select-none bg-transparent pt-12 pl-4 flex items-start justify-start">
+      {/* Positioned Container - no transition-all so dragging and scaling have zero latency */}
       <div
         ref={containerRef}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onMouseDown={handleMouseDown}
-        className={`pointer-events-auto cursor-grab active:cursor-grabbing transition-all duration-150 rounded-2xl relative ${
+        className={`pointer-events-auto cursor-grab active:cursor-grabbing rounded-2xl relative inline-flex flex-col items-center ${
           isInteractive
-            ? 'ring-2 ring-blue-500/70 bg-slate-950/60 backdrop-blur-sm p-3 shadow-2xl'
+            ? 'ring-2 ring-blue-500/70 bg-slate-950/70 backdrop-blur-sm p-2 shadow-2xl'
             : 'p-2'
         }`}
         style={{
@@ -245,16 +258,20 @@ export const OverlayApp: React.FC = () => {
           </>
         )}
 
-        {/* Hover Mini Toolbar */}
+        {/* Hover Mini Toolbar - positioned absolute ABOVE the layout buttons so the buttons NEVER jump or shift position */}
         {isInteractive && (
-          <div className="flex items-center justify-between gap-2 px-2 py-1 mb-2 rounded-lg bg-slate-900/95 border border-slate-700/80 text-xs font-medium text-slate-200 shadow-md">
-            {/* Left: Drag icon + Prev / Next Layout Navigator */}
+          <div
+            onMouseDown={(e) => e.stopPropagation()}
+            className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-slate-900/95 border border-slate-700/80 text-xs font-medium text-slate-200 shadow-md whitespace-nowrap z-40"
+          >
+            {/* Left: Move icon + Layout Prev / Next Switcher */}
             <div className="flex items-center gap-1">
-              <Move className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 cursor-grab" title="Kéo để di chuyển overlay" />
+              <Move className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 cursor-grab" title="Kéo để di chuyển" />
 
               {/* Prev Layout Button */}
               <button
                 type="button"
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={handlePrevProfile}
                 title="Chuyển sang layout trước (Previous layout)"
                 className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
@@ -273,6 +290,7 @@ export const OverlayApp: React.FC = () => {
               {/* Next Layout Button */}
               <button
                 type="button"
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={handleNextProfile}
                 title="Chuyển sang layout tiếp theo (Next layout)"
                 className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
@@ -282,8 +300,7 @@ export const OverlayApp: React.FC = () => {
             </div>
 
             {/* Right: Scale % + Settings + Quit */}
-            <div className="flex items-center gap-1.5">
-              {/* Scale percentage indicator */}
+            <div className="flex items-center gap-1">
               <div className="flex items-center gap-1 text-[10px] text-blue-400 font-mono bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-800/50">
                 <Maximize2 className="w-2.5 h-2.5" />
                 <span>{Math.round(activeProfile.scale * 100)}%</span>
@@ -291,6 +308,7 @@ export const OverlayApp: React.FC = () => {
 
               <button
                 type="button"
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (window.electronAPI) window.electronAPI.openSettings();
@@ -303,6 +321,7 @@ export const OverlayApp: React.FC = () => {
 
               <button
                 type="button"
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (window.electronAPI?.quitApp) {

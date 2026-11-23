@@ -189,7 +189,12 @@ function cycleProfile(direction: 'next' | 'prev'): void {
     nextIndex = (currentIndex - 1 + profiles.length) % profiles.length;
   }
 
+  const currentProfile = profiles[currentIndex];
   const nextProfile = profiles[nextIndex];
+  if (currentProfile) {
+    nextProfile.position = { ...currentProfile.position };
+    nextProfile.scale = currentProfile.scale;
+  }
   config.activeProfileId = nextProfile.id;
   configManager.saveConfig(config);
   notifyConfigChanged(config);
@@ -291,16 +296,15 @@ function setupIpc(): void {
     }
   });
 
+  // Instant window move during dragging without disk I/O bottleneck
   ipcMain.handle('set-overlay-position', (_event, pos: Position) => {
     const config = configManager.getConfig();
     const active = config.profiles.find((p) => p.id === config.activeProfileId);
     if (active) {
       active.position = pos;
-      configManager.saveConfig(config);
-      if (overlayWindow && !overlayWindow.isDestroyed()) {
-        overlayWindow.setPosition(pos.x, pos.y);
-      }
-      notifyConfigChanged(config);
+    }
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setPosition(pos.x, pos.y);
     }
   });
 
@@ -354,6 +358,12 @@ if (!app || typeof app.requestSingleInstanceLock !== 'function') {
         onOpenSettings: () => createSettingsWindow(),
         onSelectProfile: (id) => {
           const config = configManager.getConfig();
+          const currentProfile = config.profiles.find((p) => p.id === config.activeProfileId);
+          const nextProfile = config.profiles.find((p) => p.id === id);
+          if (currentProfile && nextProfile) {
+            nextProfile.position = { ...currentProfile.position };
+            nextProfile.scale = currentProfile.scale;
+          }
           config.activeProfileId = id;
           configManager.saveConfig(config);
           notifyConfigChanged(config);

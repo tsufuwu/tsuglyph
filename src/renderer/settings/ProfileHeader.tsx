@@ -23,7 +23,12 @@ export const ProfileHeader: React.FC = () => {
   if (!activeProfile) return null;
 
   const handleSelectProfile = (id: string) => {
-    saveConfig({ ...config, activeProfileId: id });
+    const currentPos = activeProfile.position;
+    const currentScale = activeProfile.scale;
+    const updatedProfiles = config.profiles.map((p) =>
+      p.id === id ? { ...p, position: currentPos, scale: currentScale } : p
+    );
+    saveConfig({ ...config, profiles: updatedProfiles, activeProfileId: id });
   };
 
   const handleCreateProfile = () => {
