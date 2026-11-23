@@ -11,7 +11,8 @@
     "start": "npm run build && node scripts/run-electron.js",
     "package": "npm run build && electron-builder --win",
     "package:portable": "npm run build && electron-builder --win portable",
-    "package:dir": "npm run build && electron-builder --dir"
+    "package:dir": "npm run build && electron-builder --dir",
+    "package:zip": "npm run package:dir && powershell -Command \"Remove-Item -Force release\\TsuGlyph-portable.zip -ErrorAction SilentlyContinue; Compress-Archive -Path release\\win-unpacked\\* -DestinationPath release\\TsuGlyph-portable.zip; Write-Host 'ZIP created: release\\TsuGlyph-portable.zip'\""
   },
   "keywords": [
     "gamepad",
