@@ -17,6 +17,7 @@ export const OverlayApp: React.FC = () => {
   const [isResizing, setIsResizing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const dragStartRef = useRef<{ screenX: number; screenY: number; windowX: number; windowY: number }>({
     screenX: 0,
@@ -81,8 +82,12 @@ export const OverlayApp: React.FC = () => {
     saveConfig({ ...config, profiles: updatedProfiles, activeProfileId: targetProfile.id });
   }, [config, activeProfile?.position, activeProfile?.scale, saveConfig]);
 
-  // Enable mouse interaction when hovered
+  // Enable mouse interaction when hovered (with 200ms debounce to prevent losing hover on edge)
   const handleMouseEnter = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
     setIsHovered(true);
     if (window.electronAPI?.setIgnoreMouseEvents) {
       window.electronAPI.setIgnoreMouseEvents(false);
@@ -91,10 +96,19 @@ export const OverlayApp: React.FC = () => {
 
   const handleMouseLeave = useCallback(() => {
     if (isDragging || isResizing) return;
-    setIsHovered(false);
-    if (window.electronAPI?.setIgnoreMouseEvents) {
-      window.electronAPI.setIgnoreMouseEvents(true, true);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
     }
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (!containerRef.current) return;
+      const isHover = containerRef.current.matches(':hover');
+      if (!isHover && !isDragging && !isResizing) {
+        setIsHovered(false);
+        if (window.electronAPI?.setIgnoreMouseEvents) {
+          window.electronAPI.setIgnoreMouseEvents(true, true);
+        }
+      }
+    }, 200);
   }, [isDragging, isResizing]);
 
   // Handle Dragging
@@ -231,8 +245,8 @@ export const OverlayApp: React.FC = () => {
     : null;
 
   return (
-    <div className="w-full h-full overflow-hidden select-none bg-transparent pt-12 pl-4 flex items-start justify-start">
-      {/* Positioned Container - no transition-all so dragging and scaling have zero latency */}
+    <div className="w-full h-full overflow-hidden select-none bg-transparent p-3 flex items-start justify-start">
+      {/* Positioned Container */}
       <div
         ref={containerRef}
         onMouseEnter={handleMouseEnter}
@@ -240,7 +254,7 @@ export const OverlayApp: React.FC = () => {
         onMouseDown={handleMouseDown}
         className={`pointer-events-auto cursor-grab active:cursor-grabbing rounded-2xl relative inline-flex flex-col items-center ${
           isInteractive
-            ? 'ring-2 ring-blue-500/70 bg-slate-950/70 backdrop-blur-sm p-2 shadow-2xl'
+            ? 'ring-2 ring-blue-500/70 bg-slate-950/75 backdrop-blur-sm p-2 shadow-2xl min-w-[315px]'
             : 'p-2'
         }`}
         style={{
@@ -258,84 +272,84 @@ export const OverlayApp: React.FC = () => {
           </>
         )}
 
-        {/* Hover Mini Toolbar - positioned absolute ABOVE the layout buttons so the buttons NEVER jump or shift position */}
-        {isInteractive && (
-          <div
-            onMouseDown={(e) => e.stopPropagation()}
-            className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-slate-900/95 border border-slate-700/80 text-xs font-medium text-slate-200 shadow-md whitespace-nowrap z-40"
-          >
-            {/* Left: Move icon + Layout Prev / Next Switcher */}
-            <div className="flex items-center gap-1">
-              <Move className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 cursor-grab" title="Kéo để di chuyển" />
+        {/* Mini Toolbar: Inside container so mouse NEVER leaves container when hovering toolbar */}
+        <div
+          onMouseDown={(e) => e.stopPropagation()}
+          className={`w-full flex items-center justify-between gap-1.5 px-2 py-1 mb-2 rounded-lg bg-slate-900/95 border border-slate-700/80 text-xs font-medium text-slate-200 shadow-md whitespace-nowrap z-40 transition-opacity duration-150 ${
+            isInteractive ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          {/* Left: Move icon + Layout Prev / Next Switcher */}
+          <div className="flex items-center gap-1">
+            <Move className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 cursor-grab" title="Kéo để di chuyển" />
 
-              {/* Prev Layout Button */}
-              <button
-                type="button"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={handlePrevProfile}
-                title="Chuyển sang layout trước (Previous layout)"
-                className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
+            {/* Prev Layout Button */}
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={handlePrevProfile}
+              title="Chuyển sang layout trước (Previous layout)"
+              className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
 
-              {/* Current Layout Name */}
-              <span
-                className="font-semibold text-[11px] text-white max-w-[130px] truncate select-none px-0.5"
-                title={activeProfile.name}
-              >
-                {activeProfile.name}
-              </span>
+            {/* Current Layout Name */}
+            <span
+              className="font-semibold text-[11px] text-white max-w-[130px] truncate select-none px-0.5"
+              title={activeProfile.name}
+            >
+              {activeProfile.name}
+            </span>
 
-              {/* Next Layout Button */}
-              <button
-                type="button"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={handleNextProfile}
-                title="Chuyển sang layout tiếp theo (Next layout)"
-                className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Right: Scale % + Settings + Quit */}
-            <div className="flex items-center gap-1">
-              <div className="flex items-center gap-1 text-[10px] text-blue-400 font-mono bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-800/50">
-                <Maximize2 className="w-2.5 h-2.5" />
-                <span>{Math.round(activeProfile.scale * 100)}%</span>
-              </div>
-
-              <button
-                type="button"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.electronAPI) window.electronAPI.openSettings();
-                }}
-                title="Mở Cài đặt"
-                className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </button>
-
-              <button
-                type="button"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.electronAPI?.quitApp) {
-                    window.electronAPI.quitApp();
-                  }
-                }}
-                title="Thoát hoàn toàn ứng dụng TsuGlyph"
-                className="p-1 rounded bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {/* Next Layout Button */}
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={handleNextProfile}
+              title="Chuyển sang layout tiếp theo (Next layout)"
+              className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-        )}
+
+          {/* Right: Scale % + Settings + Quit */}
+          <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 text-[10px] text-blue-400 font-mono bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-800/50">
+              <Maximize2 className="w-2.5 h-2.5" />
+              <span>{Math.round(activeProfile.scale * 100)}%</span>
+            </div>
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.electronAPI) window.electronAPI.openSettings();
+              }}
+              title="Mở Cài đặt"
+              className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.electronAPI?.quitApp) {
+                  window.electronAPI.quitApp();
+                }
+              }}
+              title="Thoát hoàn toàn ứng dụng TsuGlyph"
+              className="p-1 rounded bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
 
         {/* Primary Console Layout SVG */}
         <div className="relative flex justify-center">
