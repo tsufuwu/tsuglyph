@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useConfig } from '../hooks/useConfig';
 import { useGamepad } from '../hooks/useGamepad';
 import { ConsoleLayoutView } from '../layouts/ConsoleLayoutView';
-import { Move, Settings, Gamepad2, Maximize2 } from 'lucide-react';
+import { Move, Settings, Gamepad2, Maximize2, X } from 'lucide-react';
 import { getLayoutButtons } from '../layouts/layoutDefinitions';
 
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
@@ -245,6 +245,20 @@ export const OverlayApp: React.FC = () => {
                 className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
               >
                 <Settings className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.electronAPI?.quitApp) {
+                    window.electronAPI.quitApp();
+                  }
+                }}
+                title="Thoát hoàn toàn ứng dụng TsuGlyph"
+                className="p-1 rounded bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

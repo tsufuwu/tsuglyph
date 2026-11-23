@@ -84,6 +84,7 @@ export interface ElectronAPI {
   toggleVisibility: () => Promise<boolean>;
   openSettings: () => Promise<void>;
   closeSettings: () => Promise<void>;
+  quitApp: () => Promise<void>;
   setOverlayPosition: (pos: Position) => Promise<void>;
   setOverlaySize: (size: { width: number; height: number }) => Promise<void>;
   setIgnoreMouseEvents: (ignore: boolean, forward?: boolean) => void;

@@ -259,6 +259,10 @@ function setupIpc(): void {
     }
   });
 
+  ipcMain.handle('quit-app', () => {
+    app.quit();
+  });
+
   ipcMain.on('set-ignore-mouse-events', (event, ignore: boolean, options: { forward?: boolean }) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win && !win.isDestroyed()) {
