@@ -34,6 +34,7 @@ function createOverlayWindow(): BrowserWindow {
     width: 520,
     height: 480,
     frame: false,
+    titleBarStyle: 'hidden',
     transparent: true,
     roundedCorners: false,
     backgroundColor: '#00000000',
@@ -44,7 +45,7 @@ function createOverlayWindow(): BrowserWindow {
     focusable: false,
     skipTaskbar: true,
     hasShadow: false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     title: '',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -94,7 +95,7 @@ function createSettingsWindow(): BrowserWindow {
     title: 'TsuGlyph - Cài đặt & Tùy biến',
     backgroundColor: '#0f1117',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

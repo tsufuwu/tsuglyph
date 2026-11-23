@@ -188,7 +188,7 @@ export const OverlayApp: React.FC = () => {
     : null;
 
   return (
-    <div className="w-screen h-screen overflow-hidden select-none bg-transparent flex items-center justify-center p-3">
+    <div className="w-full h-full overflow-hidden select-none bg-transparent flex items-center justify-center p-3">
       {/* Positioned Container */}
       <div
         ref={containerRef}
