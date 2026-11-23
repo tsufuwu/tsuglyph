@@ -31,17 +31,27 @@ function loadWindowContent(win: BrowserWindow, hash: string): void {
   }
 }
 
+// How many pixels the DWM "ghost" non-client area occupies at the top of a
+// frame-less transparent window on Windows.  We hide this strip by:
+//   1. Making the window 24 px taller and 24 px higher on screen (so the ghost
+//      sits above the intended position and is clipped by the screen edge), OR
+//   2. Calling win.setShape() to hard-clip the top 24 px out of the window's
+//      visible region.
+// We use setShape so the user's chosen Y coordinate is respected exactly.
+const DWM_BAR_HEIGHT = 24;
+
 function createOverlayWindow(): BrowserWindow {
   const config = configManager.getConfig();
   const activeProfile = config.profiles.find((p) => p.id === config.activeProfileId) || config.profiles[0];
   const posX = activeProfile?.position?.x ?? 1500;
   const posY = activeProfile?.position?.y ?? 700;
 
+  // Add DWM_BAR_HEIGHT extra so setShape can clip it without losing content
   const win = new BrowserWindow({
     x: posX,
     y: posY,
     width: 520,
-    height: 480,
+    height: 480 + DWM_BAR_HEIGHT,
     frame: false,
     transparent: true,
     roundedCorners: false,
@@ -49,7 +59,7 @@ function createOverlayWindow(): BrowserWindow {
     thickFrame: false,
     alwaysOnTop: true,
     resizable: false,
-    movable: true,
+    movable: false,
     focusable: false,
     skipTaskbar: true,
     hasShadow: false,
@@ -78,12 +88,14 @@ function createOverlayWindow(): BrowserWindow {
   loadWindowContent(win, 'overlay');
 
   win.once('ready-to-show', () => {
-    // Delay 300ms to let CSS transparent background paint before the window is visible
-    // This prevents the white-background flash from Chromium's default renderer init
     setTimeout(() => {
-      if (!win.isDestroyed()) {
-        win.showInactive();
-      }
+      if (win.isDestroyed()) return;
+      win.showInactive();
+      // Hard-clip the top DWM_BAR_HEIGHT px out of the window's visible region.
+      // This permanently removes the white/grey DWM ghost bar from view without
+      // affecting the content area (which is already padded down by the same amount in CSS).
+      const [w, h] = win.getSize();
+      win.setShape([{ x: 0, y: DWM_BAR_HEIGHT, width: w, height: h - DWM_BAR_HEIGHT }]);
     }, 300);
   });
 
@@ -294,7 +306,11 @@ function setupIpc(): void {
 
   ipcMain.handle('set-overlay-size', (_event, size: { width: number; height: number }) => {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
-      overlayWindow.setSize(Math.round(size.width), Math.round(size.height));
+      const w = Math.round(size.width);
+      const h = Math.round(size.height) + DWM_BAR_HEIGHT;
+      overlayWindow.setSize(w, h);
+      // Re-apply the shape clip after resize so the bar stays hidden
+      overlayWindow.setShape([{ x: 0, y: DWM_BAR_HEIGHT, width: w, height: h - DWM_BAR_HEIGHT }]);
     }
   });
 }

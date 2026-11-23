@@ -20,6 +20,13 @@
   }
 }
 
+/* Overlay page: push content down by exactly the DWM ghost bar height (24px)
+   that win.setShape() clips away from the top of the Electron window.
+   Without this, the top 24px of the controller widget would be invisible. */
+.overlay-root {
+  padding-top: 24px;
+}
+
 /* Custom scrollbars for settings panel */
 ::-webkit-scrollbar {
   width: 6px;

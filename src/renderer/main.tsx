@@ -9,6 +9,9 @@ const isOverlay = hash === '#overlay';
 
 if (isOverlay) {
   document.title = '';
+  // Apply the 24px top padding that compensates for the DWM ghost bar
+  // which win.setShape() clips away from the top of the overlay window
+  document.getElementById('root')?.classList.add('overlay-root');
 }
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
