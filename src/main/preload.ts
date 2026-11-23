@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openSettings: (): Promise<void> => ipcRenderer.invoke('open-settings'),
   closeSettings: (): Promise<void> => ipcRenderer.invoke('close-settings'),
   setOverlayPosition: (pos: Position): Promise<void> => ipcRenderer.invoke('set-overlay-position', pos),
+  setIgnoreMouseEvents: (ignore: boolean, forward?: boolean): void => {
+    ipcRenderer.send('set-ignore-mouse-events', ignore, { forward: forward ?? true });
+  },
 
   onConfigChanged: (callback: (config: AppConfig) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, config: AppConfig) => callback(config);

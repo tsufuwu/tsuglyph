@@ -56,12 +56,8 @@ function createOverlayWindow(): BrowserWindow {
     win.removeMenu();
   }
 
-  const config = configManager.getConfig();
-  if (config.isLocked) {
-    win.setIgnoreMouseEvents(true, { forward: true });
-  } else {
-    win.setIgnoreMouseEvents(false);
-  }
+  // Start with click-through enabled so clicks pass to background apps/games
+  win.setIgnoreMouseEvents(true, { forward: true });
 
   loadWindowContent(win, 'overlay');
 
@@ -239,6 +235,13 @@ function setupIpc(): void {
   ipcMain.handle('close-settings', () => {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
       settingsWindow.close();
+    }
+  });
+
+  ipcMain.on('set-ignore-mouse-events', (event, ignore: boolean, options: { forward?: boolean }) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed()) {
+      win.setIgnoreMouseEvents(ignore, { forward: options?.forward ?? true });
     }
   });
 
