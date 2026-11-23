@@ -18,6 +18,9 @@ app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+// Force Chromium to initialize the renderer with transparent background (ARGB 0x00000000)
+// instead of the default opaque white — prevents the white flash before CSS loads
+app.commandLine.appendSwitch('default-background-color', '0');
 
 function loadWindowContent(win: BrowserWindow, hash: string): void {
   if (isDev) {
@@ -75,7 +78,13 @@ function createOverlayWindow(): BrowserWindow {
   loadWindowContent(win, 'overlay');
 
   win.once('ready-to-show', () => {
-    win.showInactive();
+    // Delay 300ms to let CSS transparent background paint before the window is visible
+    // This prevents the white-background flash from Chromium's default renderer init
+    setTimeout(() => {
+      if (!win.isDestroyed()) {
+        win.showInactive();
+      }
+    }, 300);
   });
 
   win.on('closed', () => {

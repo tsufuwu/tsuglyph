@@ -1,12 +1,22 @@
 <!DOCTYPE html>
-<html lang="vi" class="bg-transparent overflow-hidden">
+<html lang="vi" class="bg-transparent overflow-hidden" style="background:transparent!important;background-color:transparent!important">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title></title>
+    <style>
+      /* Force transparent BEFORE any JS/CSS loads — prevents white flash in Electron overlay */
+      html, body, #root {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        -webkit-app-region: no-drag;
+      }
+    </style>
   </head>
-  <body class="bg-transparent overflow-hidden text-slate-100 m-0 p-0">
-    <div id="root" class="bg-transparent overflow-hidden w-full h-full"></div>
+  <body class="bg-transparent overflow-hidden text-slate-100 m-0 p-0" style="background:transparent!important;background-color:transparent!important">
+    <div id="root" class="bg-transparent overflow-hidden w-full h-full" style="background:transparent!important"></div>
     <script type="module" src="/src/renderer/main.tsx"></script>
   </body>
 </html>
