@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, Menu } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
@@ -39,6 +39,8 @@ function createOverlayWindow(): BrowserWindow {
     focusable: false,
     skipTaskbar: true,
     hasShadow: false,
+    autoHideMenuBar: true,
+    title: '',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -49,6 +51,10 @@ function createOverlayWindow(): BrowserWindow {
   // Level 'screen-saver' to ensure it sits on top of borderless fullscreen games
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  win.setMenu(null);
+  if (typeof win.removeMenu === 'function') {
+    win.removeMenu();
+  }
 
   const config = configManager.getConfig();
   if (config.isLocked) {
@@ -86,6 +92,7 @@ function createSettingsWindow(): BrowserWindow {
     title: 'TsuGlyph - Cài đặt & Tùy biến',
     backgroundColor: '#0f1117',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    autoHideMenuBar: true,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -93,6 +100,11 @@ function createSettingsWindow(): BrowserWindow {
       contextIsolation: true,
     },
   });
+
+  win.setMenu(null);
+  if (typeof win.removeMenu === 'function') {
+    win.removeMenu();
+  }
 
   loadWindowContent(win, 'settings');
 
@@ -267,6 +279,7 @@ if (!gotTheLock) {
   });
 
   app.whenReady().then(() => {
+    Menu.setApplicationMenu(null);
     configManager = new ConfigManager();
     setupIpc();
 

@@ -7,6 +7,10 @@ import './index.css';
 const hash = window.location.hash.toLowerCase();
 const isOverlay = hash === '#overlay';
 
+if (isOverlay) {
+  document.title = '';
+}
+
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     {isOverlay ? <OverlayApp /> : <SettingsApp />}
