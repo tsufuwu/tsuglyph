@@ -46,12 +46,12 @@ function createOverlayWindow(): BrowserWindow {
   const posX = activeProfile?.position?.x ?? 1500;
   const posY = activeProfile?.position?.y ?? 700;
 
-  // Add DWM_BAR_HEIGHT extra so setShape can clip it without losing content
+  // Generous fixed dimensions (680x600) so buttons at any scale (0.5x - 2.5x) fit without window resizing
   const win = new BrowserWindow({
     x: posX,
     y: posY,
-    width: 520,
-    height: 480 + DWM_BAR_HEIGHT,
+    width: 680,
+    height: 600 + DWM_BAR_HEIGHT,
     frame: false,
     transparent: true,
     roundedCorners: false,
@@ -304,14 +304,9 @@ function setupIpc(): void {
     }
   });
 
-  ipcMain.handle('set-overlay-size', (_event, size: { width: number; height: number }) => {
-    if (overlayWindow && !overlayWindow.isDestroyed()) {
-      const w = Math.round(size.width);
-      const h = Math.round(size.height) + DWM_BAR_HEIGHT;
-      overlayWindow.setSize(w, h);
-      // Re-apply the shape clip after resize so the bar stays hidden
-      overlayWindow.setShape([{ x: 0, y: DWM_BAR_HEIGHT, width: w, height: h - DWM_BAR_HEIGHT }]);
-    }
+  // Fixed window size is preserved; resizing scale only affects the SVG button layout
+  ipcMain.handle('set-overlay-size', (_event, _size: { width: number; height: number }) => {
+    // Intentionally no-op: window bounds stay fixed as requested
   });
 }
 

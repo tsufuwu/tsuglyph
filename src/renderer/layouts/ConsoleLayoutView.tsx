@@ -23,18 +23,15 @@ export const ConsoleLayoutView: React.FC<ConsoleLayoutProps> = ({
     physicalLayout
   );
 
+  const scaledWidth = Math.round(width * scale);
+  const scaledHeight = Math.round(height * scale);
+
   return (
-    <div
-      className="inline-block transition-transform duration-75 select-none"
-      style={{
-        transform: `scale(${scale})`,
-        transformOrigin: 'top left',
-      }}
-    >
+    <div className="inline-block select-none">
       <svg
         viewBox={viewBox}
-        width={width}
-        height={height}
+        width={scaledWidth}
+        height={scaledHeight}
         className="overflow-visible"
       >
         {buttons.map((btn) => {

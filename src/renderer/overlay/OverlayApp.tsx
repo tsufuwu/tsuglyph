@@ -2,13 +2,13 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useConfig } from '../hooks/useConfig';
 import { useGamepad } from '../hooks/useGamepad';
 import { ConsoleLayoutView } from '../layouts/ConsoleLayoutView';
-import { Move, Settings, Gamepad2, Maximize2, X } from 'lucide-react';
+import { Move, Settings, Gamepad2, Maximize2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getLayoutButtons } from '../layouts/layoutDefinitions';
 
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
 
 export const OverlayApp: React.FC = () => {
-  const { config, activeProfile, setPosition, updateActiveProfile } = useConfig();
+  const { config, activeProfile, setPosition, updateActiveProfile, saveConfig } = useConfig();
   const { activeButtons, gamepadInfo } = useGamepad({
     mapping: activeProfile ? activeProfile.customMapping : {},
   });
@@ -38,18 +38,48 @@ export const OverlayApp: React.FC = () => {
     corner: 'se',
   });
 
-  // Dynamically size the dedicated Electron window to fit the controller widget
-  useEffect(() => {
-    if (!activeProfile) return;
-    const isCompact = activeProfile.displayMode === 'compact';
-    const baseW = isCompact ? 240 : 380;
-    const baseH = (isCompact ? 240 : 200) + (activeProfile.showPhysicalLayoutBelow ? 170 : 0);
-    const targetW = Math.round(Math.max(280, baseW * activeProfile.scale + 60));
-    const targetH = Math.round(Math.max(240, baseH * activeProfile.scale + 80));
-    if (window.electronAPI?.setOverlaySize) {
-      window.electronAPI.setOverlaySize({ width: targetW, height: targetH });
-    }
-  }, [activeProfile?.scale, activeProfile?.displayMode, activeProfile?.showPhysicalLayoutBelow]);
+  // Next / Previous Layout Navigation
+  const handlePrevProfile = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    const profiles = config.profiles;
+    if (!profiles || profiles.length === 0) return;
+    const currentIndex = profiles.findIndex((p) => p.id === config.activeProfileId);
+    const prevIndex = (currentIndex - 1 + profiles.length) % profiles.length;
+    const targetProfile = profiles[prevIndex];
+    const currentPos = activeProfile?.position;
+    const currentScale = activeProfile?.scale;
+    const updatedProfiles = profiles.map((p, idx) =>
+      idx === prevIndex
+        ? {
+            ...p,
+            ...(currentPos ? { position: currentPos } : {}),
+            ...(currentScale ? { scale: currentScale } : {}),
+          }
+        : p
+    );
+    saveConfig({ ...config, profiles: updatedProfiles, activeProfileId: targetProfile.id });
+  }, [config, activeProfile?.position, activeProfile?.scale, saveConfig]);
+
+  const handleNextProfile = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    const profiles = config.profiles;
+    if (!profiles || profiles.length === 0) return;
+    const currentIndex = profiles.findIndex((p) => p.id === config.activeProfileId);
+    const nextIndex = (currentIndex + 1) % profiles.length;
+    const targetProfile = profiles[nextIndex];
+    const currentPos = activeProfile?.position;
+    const currentScale = activeProfile?.scale;
+    const updatedProfiles = profiles.map((p, idx) =>
+      idx === nextIndex
+        ? {
+            ...p,
+            ...(currentPos ? { position: currentPos } : {}),
+            ...(currentScale ? { scale: currentScale } : {}),
+          }
+        : p
+    );
+    saveConfig({ ...config, profiles: updatedProfiles, activeProfileId: targetProfile.id });
+  }, [config, activeProfile?.position, activeProfile?.scale, saveConfig]);
 
   // Enable mouse interaction when hovered
   const handleMouseEnter = useCallback(() => {
@@ -188,7 +218,7 @@ export const OverlayApp: React.FC = () => {
     : null;
 
   return (
-    <div className="w-full h-full overflow-hidden select-none bg-transparent flex items-center justify-center p-3">
+    <div className="w-full h-full overflow-hidden select-none bg-transparent flex items-start justify-start p-3">
       {/* Positioned Container */}
       <div
         ref={containerRef}
@@ -217,23 +247,47 @@ export const OverlayApp: React.FC = () => {
 
         {/* Hover Mini Toolbar */}
         {isInteractive && (
-          <div className="flex items-center justify-between gap-2 px-2.5 py-1 mb-2 rounded-lg bg-slate-900/95 border border-slate-700/80 text-xs font-medium text-slate-200 shadow-md">
-            <div className="flex items-center gap-1.5 pointer-events-none">
-              <Move className="w-3.5 h-3.5 text-blue-400" />
-              <span className="font-semibold text-[11px] text-white">{activeProfile.name}</span>
-              <span className="text-[10px] text-slate-400">({x}, {y})</span>
+          <div className="flex items-center justify-between gap-2 px-2 py-1 mb-2 rounded-lg bg-slate-900/95 border border-slate-700/80 text-xs font-medium text-slate-200 shadow-md">
+            {/* Left: Drag icon + Prev / Next Layout Navigator */}
+            <div className="flex items-center gap-1">
+              <Move className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 cursor-grab" title="Kéo để di chuyển overlay" />
+
+              {/* Prev Layout Button */}
+              <button
+                type="button"
+                onClick={handlePrevProfile}
+                title="Chuyển sang layout trước (Previous layout)"
+                className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Current Layout Name */}
+              <span
+                className="font-semibold text-[11px] text-white max-w-[130px] truncate select-none px-0.5"
+                title={activeProfile.name}
+              >
+                {activeProfile.name}
+              </span>
+
+              {/* Next Layout Button */}
+              <button
+                type="button"
+                onClick={handleNextProfile}
+                title="Chuyển sang layout tiếp theo (Next layout)"
+                className="p-1 rounded bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white transition-colors"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Right: Scale % + Settings + Quit */}
+            <div className="flex items-center gap-1.5">
               {/* Scale percentage indicator */}
               <div className="flex items-center gap-1 text-[10px] text-blue-400 font-mono bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-800/50">
                 <Maximize2 className="w-2.5 h-2.5" />
                 <span>{Math.round(activeProfile.scale * 100)}%</span>
               </div>
-
-              <span className="text-[10px] text-slate-400 hidden sm:inline">
-                Click mở Cài đặt
-              </span>
 
               <button
                 type="button"
