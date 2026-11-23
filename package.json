@@ -1,5 +1,5 @@
 {
-  "name": "unipad-overlay",
+  "name": "tsuglyph",
   "version": "1.0.0",
   "description": "Universal Gamepad Button Overlay for PC Games and Emulators",
   "main": "dist/main/main/index.js",
@@ -22,7 +22,7 @@
     "n64",
     "pcsx2"
   ],
-  "author": "UniPad Team",
+  "author": "TsuGlyph Team",
   "license": "MIT",
   "dependencies": {
     "clsx": "^2.1.1",
@@ -47,8 +47,8 @@
     "wait-on": "^8.0.2"
   },
   "build": {
-    "appId": "com.unipad.overlay",
-    "productName": "UniPad Overlay",
+    "appId": "com.tsuglyph.overlay",
+    "productName": "TsuGlyph",
     "directories": {
       "output": "release"
     },
@@ -71,3 +71,4 @@
     }
   }
 }
+

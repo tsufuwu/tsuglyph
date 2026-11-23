@@ -78,7 +78,7 @@ export const ShortcutsTab: React.FC = () => {
           <p>
             • <strong>Chế độ hiển thị game:</strong> Hãy đặt game hoặc trình giả lập ở chế độ{' '}
             <span className="text-slate-200 font-medium">Borderless Fullscreen</span> hoặc{' '}
-            <span className="text-slate-200 font-medium">Windowed</span> để UniPad Overlay luôn hiển thị trên cùng mượt mà nhất.
+            <span className="text-slate-200 font-medium">Windowed</span> để TsuGlyph luôn hiển thị trên cùng mượt mà nhất.
           </p>
           <p>
             • <strong>Giả lập Dolphin (GameCube):</strong> Nút A to màu xanh lá cây mặc định map với nút A (Xbox), nút B đỏ nhỏ map với nút X (Xbox), nút X & Y hình hạt đậu map với nút B & Y.

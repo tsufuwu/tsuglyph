@@ -38,8 +38,12 @@ export class ConfigManager {
         return {
           ...DEFAULT_APP_CONFIG,
           ...parsed,
+          startWithOverlayOnly: parsed.startWithOverlayOnly ?? false,
           profiles: Array.isArray(parsed.profiles) && parsed.profiles.length > 0
-            ? parsed.profiles
+            ? parsed.profiles.map((p: any) => ({
+                showPhysicalLayoutBelow: false,
+                ...p,
+              }))
             : DEFAULT_APP_CONFIG.profiles,
         };
       }

@@ -47,7 +47,8 @@ export interface Profile {
   layout: ConsoleLayoutId;
   displayMode: DisplayMode;
   showShoulders: boolean;
-  dualLabelEnabled: boolean;
+  dualLabelEnabled: boolean;      // Show sub-labels (physical key hints) INSIDE each button
+  showPhysicalLayoutBelow: boolean; // Show a SEPARATE physical layout panel BELOW the console layout
   physicalLayout: PhysicalControllerType;
   staticCheatSheet: boolean;
   scale: number; // 0.5 - 2.5
@@ -61,8 +62,10 @@ export interface AppConfig {
   activeProfileId: string;
   isLocked: boolean; // true = click-through (ignore mouse events), false = draggable edit mode
   isVisible: boolean;
+  startWithOverlayOnly: boolean; // If true, skip Settings on startup and show overlay directly
   profiles: Profile[];
 }
+
 
 export interface GamepadState {
   connected: boolean;

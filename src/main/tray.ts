@@ -33,7 +33,7 @@ export function setupTray(config: AppConfig, callbacks: TrayCallbacks): Tray {
 
   const icon = createDefaultTrayIcon();
   trayInstance = new Tray(icon);
-  trayInstance.setToolTip('UniPad Overlay - Gamepad Button Overlay');
+  trayInstance.setToolTip('TsuGlyph - Gamepad Button Overlay');
 
   trayInstance.on('double-click', () => {
     callbacks.onOpenSettings();
@@ -55,7 +55,7 @@ export function updateTrayMenu(config: AppConfig, callbacks: TrayCallbacks): voi
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '🎮 UniPad Overlay',
+      label: '🎮 TsuGlyph',
       enabled: false,
     },
     { type: 'separator' },

@@ -83,7 +83,7 @@ function createSettingsWindow(): BrowserWindow {
     minWidth: 800,
     minHeight: 600,
     frame: true,
-    title: 'UniPad Overlay - Cài đặt & Tùy biến',
+    title: 'TsuGlyph - Cài đặt & Tùy biến',
     backgroundColor: '#0f1117',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
     show: false,
@@ -271,6 +271,13 @@ if (!gotTheLock) {
     setupIpc();
 
     overlayWindow = createOverlayWindow();
+
+    // Startup behavior: open Settings by default unless user opted for overlay-only mode
+    const cfg = configManager.getConfig();
+    if (!cfg.startWithOverlayOnly) {
+      createSettingsWindow();
+    }
+
     setupTray(configManager.getConfig(), {
       onToggleLock: () => toggleLock(),
       onToggleVisibility: () => toggleVisibility(),

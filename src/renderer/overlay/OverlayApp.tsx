@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useConfig } from '../hooks/useConfig';
 import { useGamepad } from '../hooks/useGamepad';
 import { ConsoleLayoutView } from '../layouts/ConsoleLayoutView';
-import { Lock, Move, Settings, Check, Gamepad2 } from 'lucide-react';
+import { Lock, Move, Settings, Gamepad2, AlertTriangle } from 'lucide-react';
+import { getLayoutButtons } from '../layouts/layoutDefinitions';
 
 export const OverlayApp: React.FC = () => {
   const { config, activeProfile, setPosition, setLock } = useConfig();
@@ -11,12 +12,22 @@ export const OverlayApp: React.FC = () => {
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const [showLockWarning, setShowLockWarning] = useState(true);
   const dragStartRef = useRef<{ mouseX: number; mouseY: number; startX: number; startY: number }>({
     mouseX: 0,
     mouseY: 0,
     startX: 0,
     startY: 0,
   });
+
+  // Auto-dismiss lock warning after 8 seconds once locked
+  useEffect(() => {
+    if (config.isLocked) {
+      setShowLockWarning(false);
+    } else {
+      setShowLockWarning(true);
+    }
+  }, [config.isLocked]);
 
   // Handle Dragging in Edit Mode
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -61,6 +72,11 @@ export const OverlayApp: React.FC = () => {
 
   const { x, y } = activeProfile.position;
   const isLocked = config.isLocked;
+
+  // Compute physical (Xbox) layout panel height for stacking
+  const physicalLayoutData = activeProfile.showPhysicalLayoutBelow
+    ? getLayoutButtons('xbox', activeProfile.displayMode === 'compact', activeProfile.showShoulders, 'xbox')
+    : null;
 
   return (
     <div className="relative w-screen h-screen overflow-hidden select-none pointer-events-none">
@@ -118,7 +134,25 @@ export const OverlayApp: React.FC = () => {
           </div>
         )}
 
-        {/* Layout SVG Visual */}
+        {/* Lock Mode Warning Banner — shown when NOT locked */}
+        {!isLocked && showLockWarning && (
+          <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/50 text-amber-300 text-xs font-semibold backdrop-blur-sm shadow-md pointer-events-auto">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              Nhấn <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-amber-500/40 font-mono text-amber-200">Ctrl + Shift + L</kbd> để khóa overlay — chuột sẽ xuyên qua vào game
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowLockWarning(false)}
+              className="ml-auto text-amber-500 hover:text-amber-200 font-bold leading-none"
+              title="Đóng thông báo"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* Primary Console Layout SVG */}
         <div
           className={`relative ${
             !isLocked
@@ -138,7 +172,7 @@ export const OverlayApp: React.FC = () => {
             scale={activeProfile.scale}
           />
 
-          {/* Subdued Controller connection status indicator in Edit Mode */}
+          {/* Gamepad connection status in Edit Mode */}
           {!isLocked && (
             <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 px-1">
               <div className="flex items-center gap-1.5">
@@ -149,14 +183,40 @@ export const OverlayApp: React.FC = () => {
                 />
                 <span>
                   {gamepadInfo.connected
-                    ? gamepadInfo.id.slice(0, 24)
+                    ? gamepadInfo.id.slice(0, 28)
                     : 'Chưa cắm tay cầm (Đang chờ...)'}
                 </span>
               </div>
-              <span className="text-[10px] text-slate-500">Ctrl+Shift+L để Khóa</span>
             </div>
           )}
         </div>
+
+        {/* PHYSICAL LAYOUT PANEL — shown below only when showPhysicalLayoutBelow is enabled */}
+        {activeProfile.showPhysicalLayoutBelow && physicalLayoutData && (
+          <div className={`mt-3 relative ${
+            !isLocked
+              ? 'p-2 rounded-xl border border-dashed border-purple-500/40 bg-slate-950/40 backdrop-blur-sm'
+              : ''
+          }`}>
+            {/* Separator label */}
+            <div className="text-[9px] font-bold uppercase tracking-widest text-purple-400/70 mb-1 px-1 flex items-center gap-1">
+              <span className="w-4 h-px bg-purple-500/30" />
+              Tay cầm vật lý (Xbox / XInput)
+              <span className="flex-1 h-px bg-purple-500/30" />
+            </div>
+            <ConsoleLayoutView
+              layoutId="xbox"
+              isCompact={activeProfile.displayMode === 'compact'}
+              showShoulders={activeProfile.showShoulders}
+              dualLabelEnabled={false}
+              physicalLayout="xbox"
+              staticCheatSheet={true}
+              activeButtons={activeButtons}
+              theme={{ id: 'dark_matte' }}
+              scale={activeProfile.scale * 0.75}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

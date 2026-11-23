@@ -2,7 +2,7 @@ import React from 'react';
 import { useConfig } from '../hooks/useConfig';
 import { ConsoleLayoutId, PhysicalControllerType } from '../../shared/types';
 import { getDefaultMappingForLayout } from '../../shared/defaultMappings';
-import { Sliders, Monitor, Sparkles, BookOpen, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Sliders, Monitor, Sparkles, BookOpen, ToggleLeft, ToggleRight, Layers, Settings2 } from 'lucide-react';
 
 interface ConsoleOption {
   id: ConsoleLayoutId;
@@ -98,7 +98,7 @@ const CONSOLES: ConsoleOption[] = [
 ];
 
 export const LayoutTab: React.FC = () => {
-  const { activeProfile, updateActiveProfile } = useConfig();
+  const { activeProfile, updateActiveProfile, config, saveConfig } = useConfig();
 
   if (!activeProfile) return null;
 
@@ -289,6 +289,54 @@ export const LayoutTab: React.FC = () => {
               ) : (
                 <ToggleLeft className="w-6 h-6" />
               )}
+            </button>
+          </div>
+
+          {/* showPhysicalLayoutBelow Toggle */}
+          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-slate-200 flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-purple-400" />
+                <span>Hiện Layout Tay cầm vật lý (bên dưới)</span>
+              </div>
+              <div className="text-xs text-slate-400">
+                Hiển thị thêm sơ đồ Xbox/XInput tách biệt phía dưới layout game — mặc định TẮT
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => updateActiveProfile({ showPhysicalLayoutBelow: !activeProfile.showPhysicalLayoutBelow })}
+              className={`p-1.5 rounded-lg border transition-colors ${
+                activeProfile.showPhysicalLayoutBelow
+                  ? 'bg-purple-600/20 border-purple-500/50 text-purple-400'
+                  : 'bg-slate-800 border-slate-700 text-slate-400'
+              }`}
+            >
+              {activeProfile.showPhysicalLayoutBelow ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
+            </button>
+          </div>
+
+          {/* startWithOverlayOnly Toggle (app-level) */}
+          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-amber-800/40 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-slate-200 flex items-center gap-1.5">
+                <Settings2 className="w-4 h-4 text-amber-400" />
+                <span>Chỉ hiện overlay nút ở lần mở tiếp theo</span>
+              </div>
+              <div className="text-xs text-slate-400">
+                Khi bật: lần sau khởi động sẽ chỉ hiện overlay mà không mở cửa sổ Cài đặt. Mặc định TẮT (mở Settings trước).
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => saveConfig({ ...config, startWithOverlayOnly: !config.startWithOverlayOnly })}
+              className={`p-1.5 rounded-lg border transition-colors ${
+                config.startWithOverlayOnly
+                  ? 'bg-amber-600/20 border-amber-500/50 text-amber-400'
+                  : 'bg-slate-800 border-slate-700 text-slate-400'
+              }`}
+            >
+              {config.startWithOverlayOnly ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
             </button>
           </div>
         </div>
