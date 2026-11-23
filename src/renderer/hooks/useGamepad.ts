@@ -40,8 +40,19 @@ export function useGamepad({ mapping, isRemapping, onRemapDetected }: UseGamepad
   const gamepadInfoRef = useRef(gamepadInfo);
   gamepadInfoRef.current = gamepadInfo;
 
+  // Stores latest state from native XInput
+  const nativeStateRef = useRef<GamepadState | null>(null);
+
   useEffect(() => {
-    const handleState = (state: GamepadState) => {
+    // 1. Listen for native XInput pushes from Main process
+    let unsubNative: (() => void) | undefined;
+    if (window.electronAPI?.onGamepadState) {
+      unsubNative = window.electronAPI.onGamepadState((state) => {
+        nativeStateRef.current = state.connected ? state : null;
+      });
+    }
+
+    const processState = (state: GamepadState) => {
       if (!state.connected) {
         if (gamepadInfoRef.current.connected) {
           setGamepadInfo({ connected: false, id: '', buttonCount: 0, axesCount: 0 });
@@ -116,45 +127,47 @@ export function useGamepad({ mapping, isRemapping, onRemapDetected }: UseGamepad
       });
     };
 
-    // 1. Primary path: Native Windows XInput via IPC
-    if (window.electronAPI?.onGamepadState) {
-      const unsub = window.electronAPI.onGamepadState(handleState);
-      return unsub;
-    }
-
-    // 2. Fallback path: Web Gamepad API (Browser/Dev fallback)
+    // 2. Poll browser Gamepad API continuously (works with DualSense, Switch, DirectInput, etc.)
+    // If native XInput has a controller connected, use native XInput state.
+    // Otherwise, seamlessly use browser Gamepad API.
     let isRunning = true;
-    const pollBrowser = () => {
+    const poll = () => {
       if (!isRunning) return;
+
+      if (nativeStateRef.current && nativeStateRef.current.connected) {
+        processState(nativeStateRef.current);
+        return;
+      }
+
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      let pad: Gamepad | null = null;
+      let activePad: Gamepad | null = null;
       for (let i = 0; i < pads.length; i++) {
         if (pads[i]?.connected) {
-          pad = pads[i];
+          activePad = pads[i];
           break;
         }
       }
 
-      if (!pad) {
-        handleState({ connected: false, id: '', buttons: [], buttonValues: [], axes: [] });
-        return;
+      if (activePad) {
+        processState({
+          connected: true,
+          id: activePad.id,
+          buttons: activePad.buttons.map((b) => b.pressed),
+          buttonValues: activePad.buttons.map((b) => b.value),
+          axes: [...activePad.axes],
+        });
+      } else {
+        processState({ connected: false, id: '', buttons: [], buttonValues: [], axes: [] });
       }
-
-      handleState({
-        connected: true,
-        id: pad.id,
-        buttons: pad.buttons.map((b) => b.pressed),
-        buttonValues: pad.buttons.map((b) => b.value),
-        axes: [...pad.axes],
-      });
     };
 
-    const intervalId = setInterval(pollBrowser, 16);
-    pollBrowser();
+    const intervalId = setInterval(poll, 16);
+    poll();
 
     return () => {
       isRunning = false;
       clearInterval(intervalId);
+      if (unsubNative) unsubNative();
     };
   }, []);
 
