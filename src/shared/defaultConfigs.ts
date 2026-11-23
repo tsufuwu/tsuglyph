@@ -191,11 +191,11 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
 export const THEME_PRESETS = {
   original: {
     name: 'Original Console Colors',
-    description: 'ChÃ­nh xÃ¡c báº£ng mÃ u nguyÃªn báº£n cá»§a tá»«ng há»‡ mÃ¡y',
+    description: 'Chính xác bảng màu nguyên bản của từng hệ máy',
   },
   minimal_white: {
     name: 'Minimal White',
-    description: 'Giao diá»‡n tá»‘i giáº£n tráº¯ng xÃ¡m tinh táº¿, viá»n má»ng',
+    description: 'Giao diện tối giản trắng xám tinh tế, viền mỏng',
     colors: {
       primary: '#ffffff',
       background: 'rgba(20, 20, 25, 0.85)',
@@ -206,7 +206,7 @@ export const THEME_PRESETS = {
   },
   dark_matte: {
     name: 'Dark Matte Stealth',
-    description: 'Tone xÃ¡m Ä‘en má» tÃ ng hÃ¬nh khÃ´ng lÃ m xao nhÃ£ng máº¯t',
+    description: 'Tone xám đen mờ tàng hình không làm xao nhãng mắt',
     colors: {
       primary: '#94a3b8',
       background: 'rgba(10, 10, 14, 0.92)',
@@ -217,7 +217,7 @@ export const THEME_PRESETS = {
   },
   neon_cyber: {
     name: 'Neon Cyberpunk',
-    description: 'Tone mÃ u dáº¡ quang cyberpunk ná»•i báº­t rá»±c rá»¡',
+    description: 'Tone màu dạ quang cyberpunk nổi bật rực rỡ',
     colors: {
       primary: '#06b6d4',
       background: 'rgba(15, 23, 42, 0.95)',
@@ -227,5 +227,3 @@ export const THEME_PRESETS = {
     },
   },
 };
-
-
