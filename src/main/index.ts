@@ -33,6 +33,8 @@ function createOverlayWindow(): BrowserWindow {
     height,
     frame: false,
     transparent: true,
+    backgroundColor: '#00000000',
+    thickFrame: false,
     alwaysOnTop: true,
     resizable: false,
     movable: false,
@@ -52,6 +54,7 @@ function createOverlayWindow(): BrowserWindow {
   win.setAlwaysOnTop(true, 'screen-saver');
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setMenu(null);
+  win.setMenuBarVisibility(false);
   if (typeof win.removeMenu === 'function') {
     win.removeMenu();
   }
