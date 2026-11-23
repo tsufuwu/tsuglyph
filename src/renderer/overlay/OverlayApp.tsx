@@ -18,11 +18,11 @@ export const OverlayApp: React.FC = () => {
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const dragStartRef = useRef<{ mouseX: number; mouseY: number; startX: number; startY: number }>({
-    mouseX: 0,
-    mouseY: 0,
-    startX: 0,
-    startY: 0,
+  const dragStartRef = useRef<{ screenX: number; screenY: number; windowX: number; windowY: number }>({
+    screenX: 0,
+    screenY: 0,
+    windowX: 0,
+    windowY: 0,
   });
   const hasMovedRef = useRef<boolean>(false);
 
@@ -37,6 +37,19 @@ export const OverlayApp: React.FC = () => {
     startScale: 1,
     corner: 'se',
   });
+
+  // Dynamically size the dedicated Electron window to fit the controller widget
+  useEffect(() => {
+    if (!activeProfile) return;
+    const isCompact = activeProfile.displayMode === 'compact';
+    const baseW = isCompact ? 240 : 380;
+    const baseH = (isCompact ? 240 : 200) + (activeProfile.showPhysicalLayoutBelow ? 170 : 0);
+    const targetW = Math.round(Math.max(280, baseW * activeProfile.scale + 60));
+    const targetH = Math.round(Math.max(240, baseH * activeProfile.scale + 80));
+    if (window.electronAPI?.setOverlaySize) {
+      window.electronAPI.setOverlaySize({ width: targetW, height: targetH });
+    }
+  }, [activeProfile?.scale, activeProfile?.displayMode, activeProfile?.showPhysicalLayoutBelow]);
 
   // Enable mouse interaction when hovered
   const handleMouseEnter = useCallback(() => {
@@ -56,20 +69,20 @@ export const OverlayApp: React.FC = () => {
 
   // Handle Dragging
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // only left click
+    if (e.button !== 0) return; // left click only
     setIsDragging(true);
     hasMovedRef.current = false;
     dragStartRef.current = {
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-      startX: activeProfile?.position.x ?? 0,
-      startY: activeProfile?.position.y ?? 0,
+      screenX: e.screenX,
+      screenY: e.screenY,
+      windowX: activeProfile?.position?.x ?? 0,
+      windowY: activeProfile?.position?.y ?? 0,
     };
   };
 
   // Handle Resize Corner MouseDown
   const handleResizeMouseDown = (e: React.MouseEvent, corner: Corner) => {
-    e.stopPropagation(); // prevent drag
+    e.stopPropagation(); // prevent window drag
     if (e.button !== 0) return;
     setIsResizing(true);
     resizeStartRef.current = {
@@ -84,16 +97,16 @@ export const OverlayApp: React.FC = () => {
     const handleMouseMove = (e: MouseEvent) => {
       // 1. Handle Dragging Position
       if (isDragging) {
-        const dx = e.clientX - dragStartRef.current.mouseX;
-        const dy = e.clientY - dragStartRef.current.mouseY;
+        const dx = e.screenX - dragStartRef.current.screenX;
+        const dy = e.screenY - dragStartRef.current.screenY;
 
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
           hasMovedRef.current = true;
         }
 
-        const newX = Math.max(0, Math.min(window.innerWidth - 80, dragStartRef.current.startX + dx));
-        const newY = Math.max(0, Math.min(window.innerHeight - 80, dragStartRef.current.startY + dy));
-        setPosition({ x: Math.round(newX), y: Math.round(newY) });
+        const newX = Math.round(dragStartRef.current.windowX + dx);
+        const newY = Math.round(dragStartRef.current.windowY + dy);
+        setPosition({ x: newX, y: newY });
       }
 
       // 2. Handle Resizing Scale
@@ -166,8 +179,8 @@ export const OverlayApp: React.FC = () => {
     return null;
   }
 
-  const { x, y } = activeProfile.position;
   const isInteractive = isHovered || isDragging || isResizing;
+  const { x, y } = activeProfile.position;
 
   // Compute physical (Xbox) layout panel data if enabled
   const physicalLayoutData = activeProfile.showPhysicalLayoutBelow
@@ -175,21 +188,19 @@ export const OverlayApp: React.FC = () => {
     : null;
 
   return (
-    <div className="fixed inset-0 overflow-hidden select-none pointer-events-none bg-transparent">
+    <div className="w-screen h-screen overflow-hidden select-none bg-transparent flex items-center justify-center p-3">
       {/* Positioned Container */}
       <div
         ref={containerRef}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onMouseDown={handleMouseDown}
-        className={`absolute pointer-events-auto cursor-grab active:cursor-grabbing transition-opacity duration-150 rounded-2xl ${
+        className={`pointer-events-auto cursor-grab active:cursor-grabbing transition-all duration-150 rounded-2xl relative ${
           isInteractive
-            ? 'ring-2 ring-blue-500/70 bg-slate-950/50 backdrop-blur-sm p-3 shadow-2xl'
-            : 'p-3'
+            ? 'ring-2 ring-blue-500/70 bg-slate-950/60 backdrop-blur-sm p-3 shadow-2xl'
+            : 'p-2'
         }`}
         style={{
-          left: `${x}px`,
-          top: `${y}px`,
           opacity: activeProfile.opacity,
         }}
         title="Kéo để di chuyển • Kéo 4 góc đổi kích cỡ • Click mở Cài đặt"
@@ -206,7 +217,7 @@ export const OverlayApp: React.FC = () => {
 
         {/* Hover Mini Toolbar */}
         {isInteractive && (
-          <div className="flex items-center justify-between gap-2 px-2.5 py-1 mb-2 rounded-lg bg-slate-900/90 border border-slate-700/80 text-xs font-medium text-slate-200 shadow-md">
+          <div className="flex items-center justify-between gap-2 px-2.5 py-1 mb-2 rounded-lg bg-slate-900/95 border border-slate-700/80 text-xs font-medium text-slate-200 shadow-md">
             <div className="flex items-center gap-1.5 pointer-events-none">
               <Move className="w-3.5 h-3.5 text-blue-400" />
               <span className="font-semibold text-[11px] text-white">{activeProfile.name}</span>
@@ -240,7 +251,7 @@ export const OverlayApp: React.FC = () => {
         )}
 
         {/* Primary Console Layout SVG */}
-        <div className="relative">
+        <div className="relative flex justify-center">
           <ConsoleLayoutView
             layoutId={activeProfile.layout}
             isCompact={activeProfile.displayMode === 'compact'}
@@ -255,28 +266,26 @@ export const OverlayApp: React.FC = () => {
 
           {/* Gamepad connection status hint when hovered */}
           {isInteractive && (
-            <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 px-1">
-              <div className="flex items-center gap-1">
-                <Gamepad2
-                  className={`w-3 h-3 ${
-                    gamepadInfo.connected ? 'text-emerald-400' : 'text-amber-500'
-                  }`}
-                />
-                <span className="truncate max-w-[200px]">
-                  {gamepadInfo.connected
-                    ? gamepadInfo.id.slice(0, 25)
-                    : 'Chờ tay cầm...'}
-                </span>
-              </div>
+            <div className="absolute -bottom-5 left-1 flex items-center gap-1 text-[10px] text-slate-400">
+              <Gamepad2
+                className={`w-3 h-3 ${
+                  gamepadInfo.connected ? 'text-emerald-400' : 'text-amber-500'
+                }`}
+              />
+              <span className="truncate max-w-[180px]">
+                {gamepadInfo.connected
+                  ? gamepadInfo.id.slice(0, 22)
+                  : 'Chờ tay cầm...'}
+              </span>
             </div>
           )}
         </div>
 
         {/* PHYSICAL LAYOUT PANEL — shown below only when showPhysicalLayoutBelow is enabled */}
         {activeProfile.showPhysicalLayoutBelow && physicalLayoutData && (
-          <div className="mt-3 relative p-2 rounded-xl border border-dashed border-purple-500/30 bg-slate-950/30 backdrop-blur-sm">
+          <div className="mt-4 relative p-2 rounded-xl border border-dashed border-purple-500/30 bg-slate-950/30 backdrop-blur-sm flex flex-col items-center">
             {/* Separator label */}
-            <div className="text-[9px] font-bold uppercase tracking-widest text-purple-400/70 mb-1 px-1 flex items-center gap-1">
+            <div className="w-full text-[9px] font-bold uppercase tracking-widest text-purple-400/70 mb-1 px-1 flex items-center gap-1">
               <span className="w-4 h-px bg-purple-500/30" />
               Tay cầm vật lý (Xbox / XInput)
               <span className="flex-1 h-px bg-purple-500/30" />

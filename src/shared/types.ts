@@ -85,6 +85,7 @@ export interface ElectronAPI {
   openSettings: () => Promise<void>;
   closeSettings: () => Promise<void>;
   setOverlayPosition: (pos: Position) => Promise<void>;
+  setOverlaySize: (size: { width: number; height: number }) => Promise<void>;
   setIgnoreMouseEvents: (ignore: boolean, forward?: boolean) => void;
   onConfigChanged: (callback: (config: AppConfig) => void) => () => void;
   onLockChanged: (callback: (locked: boolean) => void) => () => void;

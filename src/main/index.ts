@@ -23,14 +23,16 @@ function loadWindowContent(win: BrowserWindow, hash: string): void {
 }
 
 function createOverlayWindow(): BrowserWindow {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.bounds;
+  const config = configManager.getConfig();
+  const activeProfile = config.profiles.find((p) => p.id === config.activeProfileId) || config.profiles[0];
+  const posX = activeProfile?.position?.x ?? 1500;
+  const posY = activeProfile?.position?.y ?? 700;
 
   const win = new BrowserWindow({
-    x: 0,
-    y: 1,
-    width,
-    height: height - 1,
+    x: posX,
+    y: posY,
+    width: 520,
+    height: 480,
     frame: false,
     transparent: true,
     roundedCorners: false,
@@ -38,7 +40,7 @@ function createOverlayWindow(): BrowserWindow {
     thickFrame: false,
     alwaysOnTop: true,
     resizable: false,
-    movable: false,
+    movable: true,
     focusable: false,
     skipTaskbar: true,
     hasShadow: false,
@@ -120,6 +122,10 @@ function createSettingsWindow(): BrowserWindow {
 }
 
 function notifyConfigChanged(config: AppConfig): void {
+  const active = config.profiles.find((p) => p.id === config.activeProfileId);
+  if (active && overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.setPosition(active.position.x, active.position.y);
+  }
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     overlayWindow.webContents.send('config-changed', config);
   }
@@ -255,7 +261,16 @@ function setupIpc(): void {
     if (active) {
       active.position = pos;
       configManager.saveConfig(config);
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.setPosition(pos.x, pos.y);
+      }
       notifyConfigChanged(config);
+    }
+  });
+
+  ipcMain.handle('set-overlay-size', (_event, size: { width: number; height: number }) => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setSize(Math.round(size.width), Math.round(size.height));
     }
   });
 }
@@ -273,66 +288,66 @@ if (!app || typeof app.requestSingleInstanceLock !== 'function') {
 } else {
   // Single instance lock
   const gotTheLock = app.requestSingleInstanceLock();
-if (!gotTheLock) {
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    if (settingsWindow) {
-      if (settingsWindow.isMinimized()) settingsWindow.restore();
-      settingsWindow.focus();
-    } else {
-      createSettingsWindow();
-    }
-  });
-
-  app.whenReady().then(() => {
-    Menu.setApplicationMenu(null);
-    configManager = new ConfigManager();
-    setupIpc();
-
-    overlayWindow = createOverlayWindow();
-
-    // Startup behavior: open Settings by default unless user opted for overlay-only mode
-    const cfg = configManager.getConfig();
-    if (!cfg.startWithOverlayOnly) {
-      createSettingsWindow();
-    }
-
-    setupTray(configManager.getConfig(), {
-      onToggleLock: () => toggleLock(),
-      onToggleVisibility: () => toggleVisibility(),
-      onOpenSettings: () => createSettingsWindow(),
-      onSelectProfile: (id) => {
-        const config = configManager.getConfig();
-        config.activeProfileId = id;
-        configManager.saveConfig(config);
-        notifyConfigChanged(config);
-        updateTray();
-      },
-      onQuit: () => app.quit(),
-    });
-
-    registerGlobalShortcuts({
-      onToggleLock: () => toggleLock(),
-      onToggleVisibility: () => toggleVisibility(),
-      onOpenSettings: () => createSettingsWindow(),
-      onNextProfile: () => cycleProfile('next'),
-      onPrevProfile: () => cycleProfile('prev'),
-    });
-
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        overlayWindow = createOverlayWindow();
+  if (!gotTheLock) {
+    app.quit();
+  } else {
+    app.on('second-instance', () => {
+      if (settingsWindow) {
+        if (settingsWindow.isMinimized()) settingsWindow.restore();
+        settingsWindow.focus();
+      } else {
+        createSettingsWindow();
       }
     });
-  });
 
-  app.on('will-quit', () => {
-    unregisterGlobalShortcuts();
-  });
+    app.whenReady().then(() => {
+      Menu.setApplicationMenu(null);
+      configManager = new ConfigManager();
+      setupIpc();
 
-  app.on('window-all-closed', () => {
-    // Keep running in tray on Windows
-  });
-}
+      overlayWindow = createOverlayWindow();
+
+      // Startup behavior: open Settings by default unless user opted for overlay-only mode
+      const cfg = configManager.getConfig();
+      if (!cfg.startWithOverlayOnly) {
+        createSettingsWindow();
+      }
+
+      setupTray(configManager.getConfig(), {
+        onToggleLock: () => toggleLock(),
+        onToggleVisibility: () => toggleVisibility(),
+        onOpenSettings: () => createSettingsWindow(),
+        onSelectProfile: (id) => {
+          const config = configManager.getConfig();
+          config.activeProfileId = id;
+          configManager.saveConfig(config);
+          notifyConfigChanged(config);
+          updateTray();
+        },
+        onQuit: () => app.quit(),
+      });
+
+      registerGlobalShortcuts({
+        onToggleLock: () => toggleLock(),
+        onToggleVisibility: () => toggleVisibility(),
+        onOpenSettings: () => createSettingsWindow(),
+        onNextProfile: () => cycleProfile('next'),
+        onPrevProfile: () => cycleProfile('prev'),
+      });
+
+      app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) {
+          overlayWindow = createOverlayWindow();
+        }
+      });
+    });
+
+    app.on('will-quit', () => {
+      unregisterGlobalShortcuts();
+    });
+
+    app.on('window-all-closed', () => {
+      // Keep running in tray on Windows
+    });
+  }
 }
