@@ -13,6 +13,12 @@ let configManager: ConfigManager;
 
 const isDev = process.env.NODE_ENV === 'development';
 
+// Disable background throttling flags so Gamepad API and animations run at full 60fps in background games
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+
 function loadWindowContent(win: BrowserWindow, hash: string): void {
   if (isDev) {
     win.loadURL(`http://localhost:5173#${hash}`);
@@ -34,7 +40,6 @@ function createOverlayWindow(): BrowserWindow {
     width: 520,
     height: 480,
     frame: false,
-    titleBarStyle: 'hidden',
     transparent: true,
     roundedCorners: false,
     backgroundColor: '#00000000',
@@ -47,26 +52,31 @@ function createOverlayWindow(): BrowserWindow {
     hasShadow: false,
     autoHideMenuBar: false,
     title: '',
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: false,
     },
   });
 
-  // Level 'screen-saver' to ensure it sits on top of borderless fullscreen games
-  win.setAlwaysOnTop(true, 'screen-saver');
+  // Level 'screen-saver' with priority 1 to ensure it sits on top of borderless fullscreen games
+  win.setAlwaysOnTop(true, 'screen-saver', 1);
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   win.setMenu(null);
   win.setMenuBarVisibility(false);
-  if (typeof win.removeMenu === 'function') {
-    win.removeMenu();
-  }
+  win.removeMenu();
+  win.setBackgroundColor('#00000000');
 
   // Start with click-through enabled so clicks pass to background apps/games
   win.setIgnoreMouseEvents(true, { forward: true });
 
   loadWindowContent(win, 'overlay');
+
+  win.once('ready-to-show', () => {
+    win.showInactive();
+  });
 
   win.on('closed', () => {
     overlayWindow = null;
@@ -349,6 +359,12 @@ if (!app || typeof app.requestSingleInstanceLock !== 'function') {
 
     app.on('window-all-closed', () => {
       // Keep running in tray on Windows
+      // Periodic watchdog to keep overlay reliably on top of borderless fullscreen games
+      setInterval(() => {
+        if (overlayWindow && !overlayWindow.isDestroyed() && configManager.getConfig().isVisible) {
+          overlayWindow.moveTop();
+        }
+      }, 1000);
     });
   }
 }

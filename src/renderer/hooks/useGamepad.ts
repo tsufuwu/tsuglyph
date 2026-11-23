@@ -64,7 +64,6 @@ export function useGamepad({ mapping, isRemapping, onRemapDetected }: UseGamepad
           });
           setActiveButtons(new Set());
         }
-        animFrameRef.current = requestAnimationFrame(poll);
         return;
       }
 
@@ -141,17 +140,15 @@ export function useGamepad({ mapping, isRemapping, onRemapDetected }: UseGamepad
         }
         return prev;
       });
-
-      animFrameRef.current = requestAnimationFrame(poll);
     };
 
-    animFrameRef.current = requestAnimationFrame(poll);
+    // Use a high-frequency interval timer (~60fps) so polling never stops when game is focused
+    const intervalId = setInterval(poll, 16);
+    poll();
 
     return () => {
       isRunning = false;
-      if (animFrameRef.current !== null) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
+      clearInterval(intervalId);
     };
   }, []);
 
