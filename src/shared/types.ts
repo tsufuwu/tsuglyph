@@ -91,6 +91,7 @@ export interface ElectronAPI {
   onConfigChanged: (callback: (config: AppConfig) => void) => () => void;
   onLockChanged: (callback: (locked: boolean) => void) => () => void;
   onProfileCycle: (callback: (direction: 'next' | 'prev') => void) => () => void;
+  onGamepadState: (callback: (state: GamepadState) => void) => () => void;
 }
 
 declare global {

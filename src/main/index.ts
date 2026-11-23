@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import { ConfigManager } from './config';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts';
 import { setupTray, updateTrayMenu } from './tray';
+import { pollXInput } from './gamepad';
 import { AppConfig, Position } from '../shared/types';
 
 let overlayWindow: BrowserWindow | null = null;
@@ -346,6 +347,14 @@ if (!app || typeof app.requestSingleInstanceLock !== 'function') {
 
       overlayWindow = createOverlayWindow();
 
+      // Native XInput polling loop (~60fps)
+      // Directly polls Windows XInput in background and sends state to overlay
+      setInterval(() => {
+        if (!overlayWindow || overlayWindow.isDestroyed()) return;
+        const state = pollXInput(0);
+        overlayWindow.webContents.send('gamepad-state', state);
+      }, 16);
+
       // Startup behavior: open Settings by default unless user opted for overlay-only mode
       const cfg = configManager.getConfig();
       if (!cfg.startWithOverlayOnly) {
@@ -383,6 +392,14 @@ if (!app || typeof app.requestSingleInstanceLock !== 'function') {
       app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
           overlayWindow = createOverlayWindow();
+
+      // Native XInput polling loop (~60fps)
+      // Directly polls Windows XInput in background and sends state to overlay
+      setInterval(() => {
+        if (!overlayWindow || overlayWindow.isDestroyed()) return;
+        const state = pollXInput(0);
+        overlayWindow.webContents.send('gamepad-state', state);
+      }, 16);
         }
       });
     });

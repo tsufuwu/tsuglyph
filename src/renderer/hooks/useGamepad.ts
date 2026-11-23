@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { CustomMapping, ButtonMappingTarget } from '../../shared/types';
+import { useState, useEffect, useRef } from 'react';
+import { CustomMapping, ButtonMappingTarget, GamepadState } from '../../shared/types';
 
 export interface GamepadInfo {
   connected: boolean;
@@ -23,7 +23,6 @@ export function useGamepad({ mapping, isRemapping, onRemapDetected }: UseGamepad
     axesCount: 0,
   });
 
-  const animFrameRef = useRef<number | null>(null);
   const onRemapDetectedRef = useRef(onRemapDetected);
   onRemapDetectedRef.current = onRemapDetected;
 
@@ -38,65 +37,41 @@ export function useGamepad({ mapping, isRemapping, onRemapDetected }: UseGamepad
     axes: [],
   });
 
+  const gamepadInfoRef = useRef(gamepadInfo);
+  gamepadInfoRef.current = gamepadInfo;
+
   useEffect(() => {
-    let isRunning = true;
-
-    const poll = () => {
-      if (!isRunning) return;
-
-      const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-      let activePad: Gamepad | null = null;
-
-      for (let i = 0; i < gamepads.length; i++) {
-        if (gamepads[i] && gamepads[i]!.connected) {
-          activePad = gamepads[i];
-          break;
-        }
-      }
-
-      if (!activePad) {
-        if (gamepadInfo.connected) {
-          setGamepadInfo({
-            connected: false,
-            id: '',
-            buttonCount: 0,
-            axesCount: 0,
-          });
+    const handleState = (state: GamepadState) => {
+      if (!state.connected) {
+        if (gamepadInfoRef.current.connected) {
+          setGamepadInfo({ connected: false, id: '', buttonCount: 0, axesCount: 0 });
           setActiveButtons(new Set());
         }
         return;
       }
 
-      // Update info if status changed
-      if (!gamepadInfo.connected || gamepadInfo.id !== activePad.id) {
+      if (!gamepadInfoRef.current.connected || gamepadInfoRef.current.id !== state.id) {
         setGamepadInfo({
           connected: true,
-          id: activePad.id,
-          buttonCount: activePad.buttons.length,
-          axesCount: activePad.axes.length,
+          id: state.id,
+          buttonCount: state.buttons.length,
+          axesCount: state.axes.length,
         });
       }
 
-      // Check for Remap Detection if listening
+      // Remap edge detection
       if (isRemappingRef.current && onRemapDetectedRef.current) {
-        // 1. Check buttons
-        for (let i = 0; i < activePad.buttons.length; i++) {
-          const btn = activePad.buttons[i];
-          const isPressed = btn.pressed || btn.value > 0.4;
+        for (let i = 0; i < state.buttons.length; i++) {
+          const isPressed = state.buttons[i] || (state.buttonValues[i] ?? 0) > 0.4;
           const wasPressed = prevRawState.current.buttons[i];
-
-          // Trigger on newly pressed button (rising edge)
           if (isPressed && !wasPressed) {
             onRemapDetectedRef.current({ type: 'button', index: i });
             break;
           }
         }
-
-        // 2. Check axes
-        for (let i = 0; i < activePad.axes.length; i++) {
-          const val = activePad.axes[i];
+        for (let i = 0; i < state.axes.length; i++) {
+          const val = state.axes[i];
           const prevVal = prevRawState.current.axes[i] || 0;
-
           if (val > 0.55 && prevVal <= 0.5) {
             onRemapDetectedRef.current({ type: 'axis', index: i, direction: 'positive' });
             break;
@@ -107,24 +82,23 @@ export function useGamepad({ mapping, isRemapping, onRemapDetected }: UseGamepad
         }
       }
 
-      // Save raw state for edge detection
       prevRawState.current = {
-        buttons: activePad.buttons.map((b) => b.pressed || b.value > 0.3),
-        axes: [...activePad.axes],
+        buttons: state.buttons.map((b, i) => b || (state.buttonValues[i] ?? 0) > 0.3),
+        axes: [...state.axes],
       };
 
-      // Resolve mapped active buttons
+      // Map active virtual buttons
       const currentMapping = mappingRef.current;
       const nextActive = new Set<string>();
 
       for (const [virtualBtnId, target] of Object.entries(currentMapping)) {
         if (target.type === 'button') {
-          const btn = activePad.buttons[target.index];
-          if (btn && (btn.pressed || btn.value > 0.2)) {
+          const isPressed = state.buttons[target.index] || (state.buttonValues[target.index] ?? 0) > 0.2;
+          if (isPressed) {
             nextActive.add(virtualBtnId);
           }
         } else if (target.type === 'axis') {
-          const axisVal = activePad.axes[target.index] ?? 0;
+          const axisVal = state.axes[target.index] ?? 0;
           if (target.direction === 'positive' && axisVal > 0.45) {
             nextActive.add(virtualBtnId);
           } else if (target.direction === 'negative' && axisVal < -0.45) {
@@ -142,9 +116,41 @@ export function useGamepad({ mapping, isRemapping, onRemapDetected }: UseGamepad
       });
     };
 
-    // Use a high-frequency interval timer (~60fps) so polling never stops when game is focused
-    const intervalId = setInterval(poll, 16);
-    poll();
+    // 1. Primary path: Native Windows XInput via IPC
+    if (window.electronAPI?.onGamepadState) {
+      const unsub = window.electronAPI.onGamepadState(handleState);
+      return unsub;
+    }
+
+    // 2. Fallback path: Web Gamepad API (Browser/Dev fallback)
+    let isRunning = true;
+    const pollBrowser = () => {
+      if (!isRunning) return;
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      let pad: Gamepad | null = null;
+      for (let i = 0; i < pads.length; i++) {
+        if (pads[i]?.connected) {
+          pad = pads[i];
+          break;
+        }
+      }
+
+      if (!pad) {
+        handleState({ connected: false, id: '', buttons: [], buttonValues: [], axes: [] });
+        return;
+      }
+
+      handleState({
+        connected: true,
+        id: pad.id,
+        buttons: pad.buttons.map((b) => b.pressed),
+        buttonValues: pad.buttons.map((b) => b.value),
+        axes: [...pad.axes],
+      });
+    };
+
+    const intervalId = setInterval(pollBrowser, 16);
+    pollBrowser();
 
     return () => {
       isRunning = false;

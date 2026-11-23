@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { AppConfig, Position } from '../shared/types';
+import { AppConfig, Position, GamepadState } from '../shared/types';
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getConfig: (): Promise<AppConfig> => ipcRenderer.invoke('get-config'),
@@ -32,5 +32,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const handler = (_event: Electron.IpcRendererEvent, direction: 'next' | 'prev') => callback(direction);
     ipcRenderer.on('profile-cycle', handler);
     return () => ipcRenderer.removeListener('profile-cycle', handler);
+  },
+
+  onGamepadState: (callback: (state: GamepadState) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, state: GamepadState) => callback(state);
+    ipcRenderer.on('gamepad-state', handler);
+    return () => ipcRenderer.removeListener('gamepad-state', handler);
   },
 });
