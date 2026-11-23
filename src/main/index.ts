@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import { spawn } from 'child_process';
 import { ConfigManager } from './config';
 import { registerGlobalShortcuts, unregisterGlobalShortcuts } from './shortcuts';
 import { setupTray, updateTrayMenu } from './tray';
@@ -240,8 +241,19 @@ function setupIpc(): void {
   });
 }
 
-// Single instance lock
-const gotTheLock = app.requestSingleInstanceLock();
+// Safeguard against ELECTRON_RUN_AS_NODE environment variable leak on Windows
+if (!app || typeof app.requestSingleInstanceLock !== 'function') {
+  const electronBin = typeof require('electron') === 'string' ? require('electron') : process.execPath;
+  const cleanEnv = { ...process.env };
+  delete cleanEnv.ELECTRON_RUN_AS_NODE;
+  const child = spawn(electronBin, [path.resolve(__dirname, '../../..')], {
+    stdio: 'inherit',
+    env: cleanEnv,
+  });
+  child.on('close', (code) => process.exit(code ?? 0));
+} else {
+  // Single instance lock
+  const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
@@ -295,4 +307,5 @@ if (!gotTheLock) {
   app.on('window-all-closed', () => {
     // Keep running in tray on Windows
   });
+}
 }
