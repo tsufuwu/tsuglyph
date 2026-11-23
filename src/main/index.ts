@@ -28,11 +28,12 @@ function createOverlayWindow(): BrowserWindow {
 
   const win = new BrowserWindow({
     x: 0,
-    y: 0,
+    y: 1,
     width,
-    height,
+    height: height - 1,
     frame: false,
     transparent: true,
+    roundedCorners: false,
     backgroundColor: '#00000000',
     thickFrame: false,
     alwaysOnTop: true,

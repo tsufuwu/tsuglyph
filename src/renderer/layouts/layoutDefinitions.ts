@@ -252,21 +252,20 @@ export function getLayoutButtons(
     }
 
     case 'gamecube': {
-      // Iconic GameCube Face Cluster
-      buttons.push(
-        // Big round Green A in center
-        { id: 'gc_a', name: 'A Button (Large Green)', label: 'A', color: '#059669', textColor: '#ffffff', shape: 'circle', x: 80, y: 80, width: 54 },
-        // Small Red B button on lower-left
-        { id: 'gc_b', name: 'B Button (Small Red)', label: 'B', color: '#dc2626', textColor: '#ffffff', shape: 'circle', x: 42, y: 98, width: 30 },
-        // Kidney bean X on right
-        { id: 'gc_x', name: 'X Button (Bean)', label: 'X', color: '#94a3b8', textColor: '#0f172a', shape: 'kidney-x', x: 120, y: 78, width: 34, height: 44 },
-        // Kidney bean Y on top
-        { id: 'gc_y', name: 'Y Button (Bean)', label: 'Y', color: '#94a3b8', textColor: '#0f172a', shape: 'kidney-y', x: 80, y: 38, width: 44, height: 34 },
-        // Purple Z trigger
-        { id: 'gc_z', name: 'Z Button (Purple)', label: 'Z', color: '#7c3aed', textColor: '#ffffff', shape: 'oval', x: 130, y: 24, width: 36, height: 22 }
-      );
-
       if (isCompact) {
+        buttons.push(
+          // Big round Green A in center
+          { id: 'gc_a', name: 'A Button (Large Green)', label: 'A', color: '#059669', textColor: '#ffffff', shape: 'circle', x: 80, y: 80, width: 54 },
+          // Small Red B button on lower-left
+          { id: 'gc_b', name: 'B Button (Small Red)', label: 'B', color: '#dc2626', textColor: '#ffffff', shape: 'circle', x: 42, y: 98, width: 30 },
+          // Kidney bean X on right
+          { id: 'gc_x', name: 'X Button (Bean)', label: 'X', color: '#94a3b8', textColor: '#0f172a', shape: 'kidney-x', x: 120, y: 78, width: 34, height: 44 },
+          // Kidney bean Y on top
+          { id: 'gc_y', name: 'Y Button (Bean)', label: 'Y', color: '#94a3b8', textColor: '#0f172a', shape: 'kidney-y', x: 80, y: 38, width: 44, height: 34 },
+          // Purple Z trigger
+          { id: 'gc_z', name: 'Z Button (Purple)', label: 'Z', color: '#7c3aed', textColor: '#ffffff', shape: 'oval', x: 130, y: 24, width: 36, height: 22 }
+        );
+
         if (showShoulders) {
           buttons.push(
             { id: 'gc_l', name: 'L Trigger', label: 'L', color: '#334155', shape: 'trigger', x: 35, y: 155, width: 50, height: 24 },
@@ -277,36 +276,49 @@ export function getLayoutButtons(
         }
         return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '15 10 145 130', width: 145, height: 130 };
       } else {
-        // Full GameCube: add C-Stick, Main Stick, D-pad, Start
+        // Full GameCube Controller: clearly separated Left, Middle, and Right
+        // Left: Control Stick & D-Pad
         buttons.push(
-          { id: 'main_stick', name: 'Control Stick (Gray)', label: 'STICK', color: '#64748b', shape: 'circle', x: 50, y: 80, width: 44 },
-          { id: 'dpad_up', name: 'D-Pad Up', label: '▲', color: '#1e293b', shape: 'pill', x: 85, y: 130, width: 22, height: 22 },
-          { id: 'dpad_left', name: 'D-Pad Left', label: '◄', color: '#1e293b', shape: 'pill', x: 67, y: 148, width: 22, height: 22 },
-          { id: 'dpad_right', name: 'D-Pad Right', label: '►', color: '#1e293b', shape: 'pill', x: 103, y: 148, width: 22, height: 22 },
-          { id: 'dpad_down', name: 'D-Pad Down', label: '▼', color: '#1e293b', shape: 'pill', x: 85, y: 166, width: 22, height: 22 },
-          { id: 'gc_start', name: 'Start/Pause', label: 'START', color: '#475569', shape: 'circle', x: 150, y: 85, width: 24 },
-          // C-Stick (Yellow)
-          { id: 'c_stick', name: 'C-Stick (Yellow)', label: 'C', color: '#eab308', textColor: '#0f172a', shape: 'circle', x: 195, y: 135, width: 36 },
-          { id: 'gc_l', name: 'L Trigger', label: 'L', color: '#334155', shape: 'trigger', x: 60, y: 22, width: 50, height: 20 },
-          { id: 'gc_r', name: 'R Trigger', label: 'R', color: '#334155', shape: 'trigger', x: 260, y: 22, width: 50, height: 20 }
+          { id: 'main_stick', name: 'Control Stick (Gray)', label: 'STICK', color: '#64748b', shape: 'circle', x: 60, y: 72, width: 46 },
+          { id: 'dpad_up', name: 'D-Pad Up', label: '▲', color: '#1e293b', shape: 'pill', x: 60, y: 118, width: 20, height: 20 },
+          { id: 'dpad_left', name: 'D-Pad Left', label: '◄', color: '#1e293b', shape: 'pill', x: 44, y: 134, width: 20, height: 20 },
+          { id: 'dpad_right', name: 'D-Pad Right', label: '►', color: '#1e293b', shape: 'pill', x: 76, y: 134, width: 20, height: 20 },
+          { id: 'dpad_down', name: 'D-Pad Down', label: '▼', color: '#1e293b', shape: 'pill', x: 60, y: 150, width: 20, height: 20 }
         );
-        return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '0 0 330 185', width: 330, height: 185 };
+        // Center: Start & Yellow C-Stick
+        buttons.push(
+          { id: 'gc_start', name: 'Start/Pause', label: 'START', color: '#475569', shape: 'circle', x: 150, y: 80, width: 24 },
+          { id: 'c_stick', name: 'C-Stick (Yellow)', label: 'C', color: '#eab308', textColor: '#0f172a', shape: 'circle', x: 195, y: 125, width: 40 }
+        );
+        // Right: Iconic Face Buttons (A, B, X, Y, Z)
+        buttons.push(
+          { id: 'gc_a', name: 'A Button (Large Green)', label: 'A', color: '#059669', textColor: '#ffffff', shape: 'circle', x: 275, y: 85, width: 52 },
+          { id: 'gc_b', name: 'B Button (Small Red)', label: 'B', color: '#dc2626', textColor: '#ffffff', shape: 'circle', x: 238, y: 102, width: 28 },
+          { id: 'gc_x', name: 'X Button (Bean)', label: 'X', color: '#94a3b8', textColor: '#0f172a', shape: 'kidney-x', x: 312, y: 83, width: 32, height: 42 },
+          { id: 'gc_y', name: 'Y Button (Bean)', label: 'Y', color: '#94a3b8', textColor: '#0f172a', shape: 'kidney-y', x: 275, y: 46, width: 42, height: 32 },
+          { id: 'gc_z', name: 'Z Button (Purple)', label: 'Z', color: '#7c3aed', textColor: '#ffffff', shape: 'oval', x: 322, y: 32, width: 34, height: 20 }
+        );
+        // Shoulders: L & R
+        buttons.push(
+          { id: 'gc_l', name: 'L Trigger', label: 'L', color: '#334155', shape: 'trigger', x: 60, y: 22, width: 50, height: 20 },
+          { id: 'gc_r', name: 'R Trigger', label: 'R', color: '#334155', shape: 'trigger', x: 275, y: 22, width: 50, height: 20 }
+        );
+        return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '0 0 360 185', width: 360, height: 185 };
       }
     }
 
     case 'n64': {
-      // Iconic N64: Blue A, Green B, 4 Yellow C-Buttons
-      buttons.push(
-        { id: 'n64_a', name: 'A Button (Blue)', label: 'A', color: '#2563eb', textColor: '#ffffff', shape: 'circle', x: 45, y: 105, width: 34 },
-        { id: 'n64_b', name: 'B Button (Green)', label: 'B', color: '#16a34a', textColor: '#ffffff', shape: 'circle', x: 30, y: 68, width: 32 },
-        // 4 C-Buttons yellow diamond
-        { id: 'c_up', name: 'C-Up (Yellow)', label: 'C▲', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'up', x: 110, y: 35, width: 30 },
-        { id: 'c_left', name: 'C-Left (Yellow)', label: 'C◄', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'left', x: 82, y: 63, width: 30 },
-        { id: 'c_right', name: 'C-Right (Yellow)', label: 'C►', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'right', x: 138, y: 63, width: 30 },
-        { id: 'c_down', name: 'C-Down (Yellow)', label: 'C▼', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'down', x: 110, y: 91, width: 30 }
-      );
-
       if (isCompact) {
+        buttons.push(
+          { id: 'n64_a', name: 'A Button (Blue)', label: 'A', color: '#2563eb', textColor: '#ffffff', shape: 'circle', x: 45, y: 105, width: 34 },
+          { id: 'n64_b', name: 'B Button (Green)', label: 'B', color: '#16a34a', textColor: '#ffffff', shape: 'circle', x: 30, y: 68, width: 32 },
+          // 4 C-Buttons yellow diamond
+          { id: 'c_up', name: 'C-Up (Yellow)', label: 'C▲', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'up', x: 110, y: 35, width: 30 },
+          { id: 'c_left', name: 'C-Left (Yellow)', label: 'C◄', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'left', x: 82, y: 63, width: 30 },
+          { id: 'c_right', name: 'C-Right (Yellow)', label: 'C►', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'right', x: 138, y: 63, width: 30 },
+          { id: 'c_down', name: 'C-Down (Yellow)', label: 'C▼', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'down', x: 110, y: 91, width: 30 }
+        );
+
         if (showShoulders) {
           buttons.push(
             { id: 'n64_l', name: 'L Shoulder', label: 'L', color: '#475569', shape: 'trigger', x: 32, y: 155, width: 44, height: 22 },
@@ -317,30 +329,43 @@ export function getLayoutButtons(
         }
         return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '5 15 160 125', width: 160, height: 125 };
       } else {
+        // FULL N64 TRIDENT CONTROLLER
+        // Left Prong: D-Pad & L
         buttons.push(
-          { id: 'n64_stick', name: 'N64 Analog Stick', label: 'STICK', color: '#64748b', shape: 'circle', x: 160, y: 110, width: 42 },
-          { id: 'n64_start', name: 'Start (Red)', label: 'START', color: '#dc2626', textColor: '#ffffff', shape: 'circle', x: 160, y: 60, width: 24 },
-          { id: 'dpad_up', name: 'D-Pad Up', label: '▲', color: '#1e293b', shape: 'pill', x: 60, y: 60, width: 22, height: 22 },
-          { id: 'dpad_left', name: 'D-Pad Left', label: '◄', color: '#1e293b', shape: 'pill', x: 42, y: 78, width: 22, height: 22 },
-          { id: 'dpad_right', name: 'D-Pad Right', label: '►', color: '#1e293b', shape: 'pill', x: 78, y: 78, width: 22, height: 22 },
-          { id: 'dpad_down', name: 'D-Pad Down', label: '▼', color: '#1e293b', shape: 'pill', x: 60, y: 96, width: 22, height: 22 },
-          { id: 'n64_l', name: 'L Shoulder', label: 'L', color: '#475569', shape: 'trigger', x: 60, y: 20, width: 48, height: 20 },
-          { id: 'n64_z', name: 'Z Trigger', label: 'Z', color: '#334155', shape: 'pill', x: 160, y: 20, width: 40, height: 18 },
-          { id: 'n64_r', name: 'R Shoulder', label: 'R', color: '#475569', shape: 'trigger', x: 260, y: 20, width: 48, height: 20 }
+          { id: 'dpad_up', name: 'D-Pad Up', label: '▲', color: '#1e293b', shape: 'pill', x: 55, y: 65, width: 22, height: 22 },
+          { id: 'dpad_left', name: 'D-Pad Left', label: '◄', color: '#1e293b', shape: 'pill', x: 37, y: 83, width: 22, height: 22 },
+          { id: 'dpad_right', name: 'D-Pad Right', label: '►', color: '#1e293b', shape: 'pill', x: 73, y: 83, width: 22, height: 22 },
+          { id: 'dpad_down', name: 'D-Pad Down', label: '▼', color: '#1e293b', shape: 'pill', x: 55, y: 101, width: 22, height: 22 },
+          { id: 'n64_l', name: 'L Shoulder', label: 'L', color: '#475569', shape: 'trigger', x: 55, y: 22, width: 48, height: 18 }
         );
-        return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '0 0 320 170', width: 320, height: 170 };
+        // Middle Prong: Red Start, Gray Stick & Z Trigger
+        buttons.push(
+          { id: 'n64_z', name: 'Z Trigger', label: 'Z', color: '#334155', shape: 'pill', x: 150, y: 22, width: 44, height: 18 },
+          { id: 'n64_start', name: 'Start (Red)', label: 'START', color: '#dc2626', textColor: '#ffffff', shape: 'circle', x: 150, y: 65, width: 24 },
+          { id: 'n64_stick', name: 'N64 Analog Stick', label: 'STICK', color: '#64748b', shape: 'circle', x: 150, y: 115, width: 44 }
+        );
+        // Right Prong: A, B, and 4 C-Buttons
+        buttons.push(
+          { id: 'n64_b', name: 'B Button (Green)', label: 'B', color: '#16a34a', textColor: '#ffffff', shape: 'circle', x: 220, y: 80, width: 30 },
+          { id: 'n64_a', name: 'A Button (Blue)', label: 'A', color: '#2563eb', textColor: '#ffffff', shape: 'circle', x: 238, y: 115, width: 32 },
+          { id: 'c_up', name: 'C-Up (Yellow)', label: 'C▲', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'up', x: 292, y: 52, width: 26 },
+          { id: 'c_left', name: 'C-Left (Yellow)', label: 'C◄', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'left', x: 268, y: 76, width: 26 },
+          { id: 'c_right', name: 'C-Right (Yellow)', label: 'C►', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'right', x: 316, y: 76, width: 26 },
+          { id: 'c_down', name: 'C-Down (Yellow)', label: 'C▼', color: '#eab308', textColor: '#0f172a', shape: 'c-button', cDirection: 'down', x: 292, y: 100, width: 26 },
+          { id: 'n64_r', name: 'R Shoulder', label: 'R', color: '#475569', shape: 'trigger', x: 292, y: 22, width: 48, height: 18 }
+        );
+        return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '0 0 350 175', width: 350, height: 175 };
       }
     }
 
     case 'snes': {
-      // SNES / Super Famicom: 4 authentic colors
-      buttons.push(
-        { id: 'snes_x', name: 'X Button (Blue)', label: 'X', color: '#2563eb', textColor: '#ffffff', shape: 'circle', x: 80, y: 35, width: 38 },
-        { id: 'snes_y', name: 'Y Button (Green)', label: 'Y', color: '#16a34a', textColor: '#ffffff', shape: 'circle', x: 40, y: 75, width: 38 },
-        { id: 'snes_a', name: 'A Button (Red)', label: 'A', color: '#dc2626', textColor: '#ffffff', shape: 'circle', x: 120, y: 75, width: 38 },
-        { id: 'snes_b', name: 'B Button (Yellow)', label: 'B', color: '#ca8a04', textColor: '#ffffff', shape: 'circle', x: 80, y: 115, width: 38 }
-      );
       if (isCompact) {
+        buttons.push(
+          { id: 'snes_x', name: 'X Button (Blue)', label: 'X', color: '#2563eb', textColor: '#ffffff', shape: 'circle', x: 80, y: 35, width: 38 },
+          { id: 'snes_y', name: 'Y Button (Green)', label: 'Y', color: '#16a34a', textColor: '#ffffff', shape: 'circle', x: 40, y: 75, width: 38 },
+          { id: 'snes_a', name: 'A Button (Red)', label: 'A', color: '#dc2626', textColor: '#ffffff', shape: 'circle', x: 120, y: 75, width: 38 },
+          { id: 'snes_b', name: 'B Button (Yellow)', label: 'B', color: '#ca8a04', textColor: '#ffffff', shape: 'circle', x: 80, y: 115, width: 38 }
+        );
         if (showShoulders) {
           buttons.push(
             { id: 'snes_l', name: 'L Shoulder', label: 'L', color: '#475569', shape: 'trigger', x: 40, y: 165, width: 55, height: 22 },
@@ -352,17 +377,32 @@ export function getLayoutButtons(
         }
         return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '10 10 140 135', width: 140, height: 135 };
       } else {
+        // FULL SNES CONTROLLER
+        // Left: D-Pad
         buttons.push(
           { id: 'dpad_up', name: 'D-Pad Up', label: '▲', color: '#1e293b', shape: 'pill', x: 60, y: 65, width: 26, height: 26 },
           { id: 'dpad_left', name: 'D-Pad Left', label: '◄', color: '#1e293b', shape: 'pill', x: 38, y: 87, width: 26, height: 26 },
           { id: 'dpad_right', name: 'D-Pad Right', label: '►', color: '#1e293b', shape: 'pill', x: 82, y: 87, width: 26, height: 26 },
-          { id: 'dpad_down', name: 'D-Pad Down', label: '▼', color: '#1e293b', shape: 'pill', x: 60, y: 109, width: 26, height: 26 },
-          { id: 'snes_select', name: 'Select', label: 'SELECT', color: '#334155', shape: 'pill', x: 135, y: 100, width: 44, height: 18 },
-          { id: 'snes_start', name: 'Start', label: 'START', color: '#334155', shape: 'pill', x: 185, y: 100, width: 44, height: 18 },
-          { id: 'snes_l', name: 'L Shoulder', label: 'L', color: '#475569', shape: 'trigger', x: 60, y: 22, width: 60, height: 20 },
-          { id: 'snes_r', name: 'R Shoulder', label: 'R', color: '#475569', shape: 'trigger', x: 260, y: 22, width: 60, height: 20 }
+          { id: 'dpad_down', name: 'D-Pad Down', label: '▼', color: '#1e293b', shape: 'pill', x: 60, y: 109, width: 26, height: 26 }
         );
-        return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '0 0 320 160', width: 320, height: 160 };
+        // Center: Select & Start
+        buttons.push(
+          { id: 'snes_select', name: 'Select', label: 'SELECT', color: '#334155', shape: 'pill', x: 135, y: 95, width: 42, height: 16 },
+          { id: 'snes_start', name: 'Start', label: 'START', color: '#334155', shape: 'pill', x: 185, y: 95, width: 42, height: 16 }
+        );
+        // Right: 4-Color Face Buttons Diamond
+        buttons.push(
+          { id: 'snes_x', name: 'X Button (Blue)', label: 'X', color: '#2563eb', textColor: '#ffffff', shape: 'circle', x: 275, y: 55, width: 34 },
+          { id: 'snes_y', name: 'Y Button (Green)', label: 'Y', color: '#16a34a', textColor: '#ffffff', shape: 'circle', x: 243, y: 82, width: 34 },
+          { id: 'snes_a', name: 'A Button (Red)', label: 'A', color: '#dc2626', textColor: '#ffffff', shape: 'circle', x: 307, y: 82, width: 34 },
+          { id: 'snes_b', name: 'B Button (Yellow)', label: 'B', color: '#ca8a04', textColor: '#ffffff', shape: 'circle', x: 275, y: 109, width: 34 }
+        );
+        // Shoulders: L & R
+        buttons.push(
+          { id: 'snes_l', name: 'L Shoulder', label: 'L', color: '#475569', shape: 'trigger', x: 60, y: 22, width: 55, height: 18 },
+          { id: 'snes_r', name: 'R Shoulder', label: 'R', color: '#475569', shape: 'trigger', x: 275, y: 22, width: 55, height: 18 }
+        );
+        return { buttons: enrichSubLabels(buttons, layoutId, physicalLayout), viewBox: '0 0 345 160', width: 345, height: 160 };
       }
     }
 
